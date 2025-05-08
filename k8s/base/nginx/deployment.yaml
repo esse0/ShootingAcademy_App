@@ -14,6 +14,8 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: frontend
           image: ghcr.io/esse0/shootingacademy_app/frontend:latest # Указываем свой образ с React и Nginx
