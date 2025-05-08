@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/esse0/ShootingAcademy_App/backend:latest
+          image: ghcr.io/esse0/shootingacademy_app/backend:latest
           ports:
             - containerPort: 80
           env:

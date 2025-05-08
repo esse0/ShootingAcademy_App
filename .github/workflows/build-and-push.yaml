@@ -6,8 +6,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_BACKEND: ${{ github.repository }}/backend
-  IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
+  IMAGE_NAME_BACKEND: esse0/shootingacademy_app/backend
+  IMAGE_NAME_FRONTEND: esse0/shootingacademy_app/frontend
 
 jobs:
   build-and-push:
@@ -25,10 +25,10 @@ jobs:
 
       - name: Build and push backend image
         run: |
-          docker build -t $REGISTRY/${IMAGE_NAME_BACKEND}:latest ./backend
-          docker push $REGISTRY/${IMAGE_NAME_BACKEND}:latest
+          docker build -t ghcr.io/${{ env.IMAGE_NAME_BACKEND }}:latest ./backend
+          docker push ghcr.io/${{ env.IMAGE_NAME_BACKEND }}:latest
 
       - name: Build and push frontend image
         run: |
-          docker build -t $REGISTRY/${IMAGE_NAME_FRONTEND}:latest ./frontend
-          docker push $REGISTRY/${IMAGE_NAME_FRONTEND}:latest
+          docker build -t ghcr.io/${{ env.IMAGE_NAME_FRONTEND }}:latest ./frontend
+          docker push ghcr.io/${{ env.IMAGE_NAME_FRONTEND }}:latest
