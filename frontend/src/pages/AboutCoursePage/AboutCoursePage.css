@@ -1,0 +1,10 @@
+.about-course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-left: 17px !important;
+}
+
+.about-course-list li::marker{
+    color: var(--accent-color);
+}

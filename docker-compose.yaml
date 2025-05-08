@@ -1,0 +1,71 @@
+services:
+    server:
+        image: shooting_academy
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        environment:
+            ASPNETCORE_ENVIRONMENT: Production
+            ASPNETCORE_URLS: ${BACKEND_API_URL}
+            JWT_ISSUER: ${JWT_ISSUER}
+            JWT_AUDIENCE: ${JWT_AUDIENCE}
+            JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+            JWT_ACCESS_EXPIRY_MINUTES: ${JWT_ACCESS_EXPIRY_MINUTES}
+            JWT_REFRESH_EXPIRY_MINUTES: ${JWT_REFRESH_EXPIRY_MINUTES}
+            DB_HOST: ${DB_HOST}
+            DB_PORT: ${DB_PORT}
+            DB_NAME: ${DB_NAME}
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+            SALT: ${SALT}
+        depends_on:
+            - database
+        networks:
+            - app-network
+
+    database:
+        image: postgres:15
+        environment:
+            POSTGRES_DB: ${DB_NAME}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        networks:
+            - app-network
+
+    nginx:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile
+        environment:
+            - BACKEND_API_URL=${BACKEND_API_URL}
+        ports:
+            - "80:80"
+        depends_on:
+            - server
+        networks:
+            - app-network
+
+    pgadmin:
+        image: dpage/pgadmin4
+        depends_on:
+            - database
+        ports:
+            - "5555:80"
+        environment:
+            PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+            PGADMIN_DEFAULT_PASSWORD: admin
+        restart: unless-stopped
+        networks:
+            - app-network
+
+volumes:
+    postgres_data:
+
+
+networks:
+    app-network:
+        driver: bridge

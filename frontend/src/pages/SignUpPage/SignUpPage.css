@@ -1,0 +1,10 @@
+.signup_container{
+    max-width: 600px;
+    margin: 100px auto;
+    padding: 0 20px;
+    font-family: var(--primary-font) !important;
+}
+
+.signup_text{
+    font-family: var(--primary-font) !important;
+}

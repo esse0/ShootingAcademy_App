@@ -1,0 +1,6 @@
+@ShootingAcademy_HostAddress = http://localhost:5178
+
+GET {{ShootingAcademy_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

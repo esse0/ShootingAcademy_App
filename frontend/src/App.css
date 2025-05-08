@@ -1,0 +1,33 @@
+:root{    
+    --header-color-white-theme: #FFF;
+
+    --background-color-white-theme: #FAFAFA;
+    --primary-color-white-theme: #000000;
+
+    --background-color-dark-theme: #31363F;
+    --primary-text-color-dark-theme: #FFF;
+
+    --accent-color: #455CC7;
+    --secondary-color: #424242;
+    
+    --primary-font: 'Montserrat', sans-serif;
+
+    --font-size-mobile: 14px;
+    --font-size-tablet: 16px;
+    --font-size-desktop: 18px;
+
+    --font-button-size-desktop: 15px;
+    --font-button-size-tablet: 12px;
+
+    --font-size-logo-mobile: 18px;
+    --font-size-logo-tablet: 21px;
+    --font-size-logo-desktop: 23px;
+
+    --container-width: 1600px;
+}
+
+@font-face {
+    font-family: "Montserrat"; 
+    src: url("./assets/fonts/Montserrat-VariableFont_wght.ttf") format("truetype"); 
+    font-weight: 400 600 800;
+}

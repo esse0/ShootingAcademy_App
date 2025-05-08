@@ -1,0 +1,111 @@
+.header{
+    background-color: var(--header-color-white-theme) !important;
+    box-shadow: none !important;
+}
+
+.header__logo{
+    color: var(--accent-color);
+    font-family: var(--primary-font) !important;
+    font-weight: 800 !important;
+    font-size: var(--font-size-logo-desktop) !important;
+}
+
+.header__logo span{
+    color: var(--secondary-color);
+}
+
+.header__body{
+    justify-content: space-between;
+    margin: 0 auto;
+    width: 100%;
+    max-width: var(--container-width);
+    height: 60px !important;
+}
+
+.navigation{
+    width: 30%;
+}
+
+.navigation__list{
+    display: flex;
+    justify-content: space-between;
+}
+
+.navigation__link{
+    text-decoration: none !important;
+    color: var(--secondary-color) !important;
+
+    font-family: var(--primary-font) !important;
+    font-weight: 600 !important;
+    font-size: var(--font-size-desktop) !important;
+}
+
+.navigation__link.active {
+    color: var(--accent-color) !important;
+}
+  
+
+.auth_links__button{
+    margin-left: 10px !important;
+    margin-right: 10px !important;
+
+    font-family: var(--primary-font) !important;
+    font-weight: 600 !important;
+    font-size: var(--font-button-size-desktop) !important;
+}
+
+.burger__menu{
+    display: block;
+    color: var(--accent-color) !important;
+}
+
+.burger__icon{
+    height: 40px !important;
+    width: 40px !important;
+}
+
+@media screen and (max-width: 480px) {
+    .header__logo{
+        font-size: var(--font-size-logo-mobile) !important;
+    }
+
+    .navigation__link{
+        font-size: var(--font-size-mobile) !important;
+    }
+
+    .burger__icon{
+        height: 30px !important;
+        width: 30px !important;
+    }
+}
+
+
+@media screen and (min-width: 480px) and (max-width: 1124px) {
+    .header__logo{
+        font-size: var(--font-size-logo-tablet) !important;
+    }
+
+    .navigation__link{
+        font-size: var(--font-size-tablet) !important;
+    }
+
+    .auth_links__button{
+        font-size: var(--font-button-size-tablet) !important;
+    }
+    
+}
+
+@media screen and (min-width: 1124px) {
+    .header__logo{
+        font-size: var(--font-size-logo-desktop) !important;
+    }
+
+    .navigation__link{
+        font-size: var(--font-size-desktop) !important;
+    }
+
+    .auth_links__button{
+        font-size: var(--font-button-size-desktop) !important;
+    }
+    
+}
