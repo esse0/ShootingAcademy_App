@@ -1,6 +1,6 @@
 import {
-  Avatar,
   Button,
+  CircularProgress,
   Divider,
   MenuItem,
   Select,
@@ -12,23 +12,105 @@ import { useForm } from "react-hook-form";
 import { UserProfileData } from "../../types/UserProfileData";
 import { useApi } from "../../hooks/useApi";
 import axios from "axios";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { userAtom } from "../../jotai/atoms";
 import { useAtom } from "jotai";
+import UploadableAvatar from "../../components/UploadableAvatar/UploadableAvatar";
+import SaveIcon from '@mui/icons-material/Save';
+import { ImageDownloadResponse } from "../../types/ImageDownloadResponse";
+import { ImageUploadData } from "../../types/ImageUploadData";
+import { ImageDownloadRequest } from "../../types/ImageDownloadRequest";
+import { useSnackbar } from "notistack";
 
 function SettingsPage(){
-
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isPhotoRemoved, setIsPhotoRemoved] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [userFieldsToAtom, setUserFieldsToAtom] = useAtom(userAtom);
- 
+  const { enqueueSnackbar } = useSnackbar();
+
   const {resData: recivedNewUserFields, execute: executeUserProfileData} = useApi<null, UserProfileData>(async (body) =>{
     return axios.put('/api/user', body)
   })
 
+  const {execute: executeImageDownloadRequest} = useApi<ImageDownloadResponse, ImageDownloadRequest>(async (body) =>{
+    return axios.post('/api/image/upload', body)
+  })
+
+  const { execute: executeDownloadImage } = useApi<null, ImageUploadData>(async (data) => {
+    if (!data) throw new Error("Нет данных для загрузки изображения");
+
+    return await axios.put(data.uploadUri, data.file, {
+      headers: {
+        "Content-Type": data.file.type
+      }
+    });
+  });
+
+  const {execute: executeAcceptDownload} = useApi<null, string>(async (courseId) => {
+    return axios.post('/api/image/confirm', null, {
+      params: { FileId: courseId },
+    });
+  })
+
+  const {execute: executeDeleteProfilePhoto} = useApi(async () => {
+    return axios.delete('/api/user/deleteprofilephoto');
+  })
+
   const {register, handleSubmit, formState: { errors }} = useForm<UserProfileData>();
 
-  const onSubmit = (data: UserProfileData) => {
-    executeUserProfileData(data);
-  };
+  const onSubmit = async (data: UserProfileData) => {
+  try {
+    setIsSubmitting(true);
+
+    if (avatarFile) {
+      let imageReqResponse = await executeImageDownloadRequest({
+        fileName: avatarFile.name,
+        mimeType: avatarFile.type,
+      });
+
+      if (!imageReqResponse?.data)
+        throw new Error("Ошибка получения URL загрузки изображения " + imageReqResponse?.data);
+
+      const { tempFileId, uploadUrl } = imageReqResponse.data;
+
+      let downloadImageResponse = await executeDownloadImage({
+        file: avatarFile,
+        uploadUri: uploadUrl,
+      });
+
+      if (
+        downloadImageResponse?.status !== 200 &&
+        downloadImageResponse?.status !== 201
+      )
+        throw new Error("Ошибка загрузки изображения " + downloadImageResponse?.status);
+
+      let acceptDownloadResponse = await executeAcceptDownload(tempFileId);
+
+      if (
+        acceptDownloadResponse?.status !== 200 &&
+        acceptDownloadResponse?.status !== 201
+      )
+        throw new Error("Ошибка подтверждения загрузки " + acceptDownloadResponse?.status);
+    } else if(isPhotoRemoved) {
+      const deleteResponse = await executeDeleteProfilePhoto();
+      if (deleteResponse?.status !== 200)
+        throw new Error("Ошибка удаления фотографии профиля");
+    }
+
+    const payload: UserProfileData = {
+      ...data,
+    };
+
+    await executeUserProfileData(payload);
+    enqueueSnackbar("Save success!", { variant: 'success' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    enqueueSnackbar(message, { variant: 'error' })
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   useEffect(() => {
     if (!recivedNewUserFields) return;
@@ -44,11 +126,7 @@ function SettingsPage(){
           Settings
         </Typography>
         <Stack flexDirection={"row"} alignItems={"center"} gap={3}>
-          <Avatar
-            alt="UserAvatar"
-            src=""
-            sx={{ width: 130, height: 130 }}
-          ></Avatar>
+           <UploadableAvatar src={userFieldsToAtom.profilePhotoUri} onChange={setAvatarFile} onDelete={setIsPhotoRemoved}/>
           <Stack>
             <Typography
               variant="body1"
@@ -66,6 +144,7 @@ function SettingsPage(){
             >
               {userFieldsToAtom.grade}
             </Typography>
+            
           </Stack>
         </Stack>
 
@@ -249,8 +328,12 @@ function SettingsPage(){
               variant="contained"
               color="primary"
               type="submit"
+              disabled={isSubmitting}
+              startIcon={
+                isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />
+              }
             >
-              Save changes
+              {isSubmitting ? "Saving..." : "Save changes"}
             </Button>
           </Stack>
         </Stack>

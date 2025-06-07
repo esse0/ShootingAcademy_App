@@ -6,6 +6,8 @@ using ShootingAcademy.Models.Controllers.User;
 using ShootingAcademy.Models.DB.ModelUser;
 using ShootingAcademy.Models.Exceptions;
 using ShootingAcademy.Services;
+using ShootingAcademy.Services.Media;
+
 
 namespace ShootingAcademy.Controllers
 {
@@ -14,10 +16,12 @@ namespace ShootingAcademy.Controllers
     public class UserController : ControllerBase
     {
         private readonly ApplicationDbContext dbContext;
+        private readonly IImageService _imageService;
 
-        public UserController(ApplicationDbContext dbContext)
+        public UserController(ApplicationDbContext dbContext, IImageService imageService)
         {
             this.dbContext = dbContext;
+            this._imageService = imageService;
         }
 
 
@@ -52,7 +56,30 @@ namespace ShootingAcademy.Controllers
 
                 await dbContext.SaveChangesAsync();
 
-                return Results.Json(FullUserModel.FromEntity(user));
+                var profileImage = await _imageService.GetFileUrl(user.Id);
+
+                return Results.Json(UserWithAvatar.FromEntity(user, profileImage.FileUri));
+            }
+            catch (BaseException exp)
+            {
+                return Results.Json(exp.GetModel(), statusCode: exp.Code);
+            }
+            catch (Exception err)
+            {
+                return Results.Problem(err.Message, statusCode: 400);
+            }
+        }
+
+        [HttpDelete("deleteprofilephoto"), Authorize]
+        public async Task<IResult> DeleteProfilePhoto()
+        {
+            try
+            {
+                Guid userGuid = AutorizeData.FromContext(HttpContext).UserGuid;
+                    
+                await _imageService.DeleteProfilePhoto(userGuid);
+               
+                return Results.Ok();
             }
             catch (BaseException exp)
             {

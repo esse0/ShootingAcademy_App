@@ -1,6 +1,6 @@
 ﻿namespace ShootingAcademy.Models.DB.ModelUser
 {
-    public class FullUserModel
+    public class UserWithAvatar
     {
         public Guid Id { get; set; }
 
@@ -19,10 +19,11 @@
         public string Email { get; set; }
 
         public string Role { get; set; }
+        public string ProfilePhotoUri { get; set; }
 
-        public static FullUserModel FromEntity(User user)
+        public static UserWithAvatar FromEntity(User user, string profilePhoroUri)
         {
-            return new FullUserModel
+            return new UserWithAvatar
             {
                 Id = user.Id,
                 FirstName = user.FirstName,
@@ -35,6 +36,7 @@
                 Email = user.Email,
                 PatronymicName = user.PatronymicName,
                 Role = user.Role,
+                ProfilePhotoUri = profilePhoroUri
             };
         }
     }

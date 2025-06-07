@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShootingAcademy.Models;
-using ShootingAcademy.Models.Controllers.Competition;
 using ShootingAcademy.Models.Controllers.Course;
 using ShootingAcademy.Models.DB;
 using ShootingAcademy.Models.DB.ModelUser;
@@ -120,7 +119,7 @@ namespace ShootingAcademy.Controllers
                                     id = lesson.Id.ToString(),
                                     description = lesson.Description,
                                     title = lesson.Title,
-                                    videoLink = lesson.VideoLink
+                                    videoLink = lesson.LessonVideo.Media.CachedUrl
                                 }).ToList()
                         }).ToList(),
 
@@ -270,113 +269,113 @@ namespace ShootingAcademy.Controllers
             }
         }
 
-        [HttpPost("create"), Authorize(Roles = "moderator")]
-        public async Task<IResult> CreateCourse([FromBody] CourseModel course)
-        {
-            Random random = new Random();
+        //[HttpPost("create"), Authorize(Roles = "moderator")]
+        //public async Task<IResult> CreateCourse([FromBody] CourseModel course)
+        //{
+        //    Random random = new Random();
 
-            try
-            {
-                if (string.IsNullOrWhiteSpace(course.title) ||
-                    string.IsNullOrWhiteSpace(course.description) ||
-                    string.IsNullOrWhiteSpace(course.duration))
-                {
-                    throw new BaseException("Invalid input: required fields are missing.", 400);
-                }
+        //    try
+        //    {
+        //        if (string.IsNullOrWhiteSpace(course.title) ||
+        //            string.IsNullOrWhiteSpace(course.description) ||
+        //            string.IsNullOrWhiteSpace(course.duration))
+        //        {
+        //            throw new BaseException("Invalid input: required fields are missing.", 400);
+        //        }
 
-                Guid instructorId = AutorizeData.FromContext(HttpContext).UserGuid;
+        //        Guid instructorId = AutorizeData.FromContext(HttpContext).UserGuid;
 
-                bool courseExists = await _context.Courses
-                    .AsNoTracking()
-                    .AnyAsync(c => c.Title == course.title && c.InstructorId == instructorId);
+        //        bool courseExists = await _context.Courses
+        //            .AsNoTracking()
+        //            .AnyAsync(c => c.Title == course.title && c.InstructorId == instructorId);
 
-                if (courseExists)
-                    throw new BaseException("A course with this title already exists.", 409);
+        //        if (courseExists)
+        //            throw new BaseException("A course with this title already exists.", 409);
 
-                int randomNumber = random.Next(10, 501);
+        //        int randomNumber = random.Next(10, 501);
 
-                var newCourse = new Course
-                {
-                    Id = Guid.NewGuid(),
-                    Title = course.title,
-                    Description = course.description,
-                    Duration = course.duration,
-                    Level = course.level ?? "Beginner",
-                    Category = course.category ?? "General",
-                    IsClosed = course.is_closed ?? false,
-                    InstructorId = instructorId,
-                    Rate = course.rate,
-                    PeopleRateCount = randomNumber
-                };
+        //        var newCourse = new Course
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            Title = course.title,
+        //            Description = course.description,
+        //            Duration = course.duration,
+        //            Level = course.level ?? "Beginner",
+        //            Category = course.category ?? "General",
+        //            IsClosed = course.is_closed ?? false,
+        //            InstructorId = instructorId,
+        //            Rate = course.rate,
+        //            PeopleRateCount = randomNumber
+        //        };
 
-                if(course.modules == null || course.modules.Count == 0)
-                {
-                    throw new BaseException("Modules is empty", 400);
-                }
+        //        if(course.modules == null || course.modules.Count == 0)
+        //        {
+        //            throw new BaseException("Modules is empty", 400);
+        //        }
 
-                foreach (var module in course.modules) {
-                    if (module.lessons == null || module.lessons.Count == 0)
-                    {
-                        throw new BaseException("Modules is empty", 400);
-                    }
-                }
+        //        foreach (var module in course.modules) {
+        //            if (module.lessons == null || module.lessons.Count == 0)
+        //            {
+        //                throw new BaseException("Modules is empty", 400);
+        //            }
+        //        }
 
-                if (course.modules != null && course.modules.Any())
-                {
-                    newCourse.Modules = course.modules.Select((m, moduleIndex) => new Module
-                    {
-                        Id = Guid.NewGuid(),
-                        Title = m.title,
-                        CourseId = newCourse.Id,
-                        Oder = moduleIndex + 1,
-                        Lessons = m.lessons?.Select((l, lessonIndex) => new Lesson
-                        {
-                            Id = Guid.NewGuid(),
-                            Title = l.title,
-                            Description = l.description,
-                            VideoLink = l.videoLink,
-                            Oder = lessonIndex + 1
-                        }).ToList() ?? new List<Lesson>()
-                    }).ToList();
-                }
+        //        if (course.modules != null && course.modules.Any())
+        //        {
+        //            newCourse.Modules = course.modules.Select((m, moduleIndex) => new Module
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                Title = m.title,
+        //                CourseId = newCourse.Id,
+        //                Oder = moduleIndex + 1,
+        //                Lessons = m.lessons?.Select((l, lessonIndex) => new Lesson
+        //                {
+        //                    Id = Guid.NewGuid(),
+        //                    Title = l.title,
+        //                    Description = l.description,
+        //                    VideoLink = l.videoLink,
+        //                    Oder = lessonIndex + 1
+        //                }).ToList() ?? new List<Lesson>()
+        //            }).ToList();
+        //        }
 
-                if (course.faqs != null && course.faqs.Any())
-                {
-                    newCourse.Faqs = course.faqs.Select(f => new Faq
-                    {
-                        Id = Guid.NewGuid(),
-                        Question = f.question,
-                        Answer = f.answer,
-                        CourseId = newCourse.Id
-                    }).ToList();
-                }
+        //        if (course.faqs != null && course.faqs.Any())
+        //        {
+        //            newCourse.Faqs = course.faqs.Select(f => new Faq
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                Question = f.question,
+        //                Answer = f.answer,
+        //                CourseId = newCourse.Id
+        //            }).ToList();
+        //        }
 
-                if (course.features != null && course.features.Any())
-                {
-                    newCourse.Features = course.features.Select(f => new Feature
-                    {
-                        Id = Guid.NewGuid(),
-                        Title = f.title,
-                        Description = f.description,
-                        CourseId = newCourse.Id
-                    }).ToList();
-                }
+        //        if (course.features != null && course.features.Any())
+        //        {
+        //            newCourse.Features = course.features.Select(f => new Feature
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                Title = f.title,
+        //                Description = f.description,
+        //                CourseId = newCourse.Id
+        //            }).ToList();
+        //        }
 
-                _context.Courses.Add(newCourse);
+        //        _context.Courses.Add(newCourse);
 
-                await _context.SaveChangesAsync();
+        //        await _context.SaveChangesAsync();
 
-                return Results.StatusCode(201);
-            }
-            catch (BaseException apperr)
-            {
-                return Results.Json(apperr.GetModel(), statusCode: apperr.Code);
-            }
-            catch (Exception err)
-            {
-                return Results.Problem(err.Message, statusCode: 500);
-            }
-        } 
+        //        return Results.StatusCode(201);
+        //    }
+        //    catch (BaseException apperr)
+        //    {
+        //        return Results.Json(apperr.GetModel(), statusCode: apperr.Code);
+        //    }
+        //    catch (Exception err)
+        //    {
+        //        return Results.Problem(err.Message, statusCode: 500);
+        //    }
+        //} 
 
         [HttpDelete("delete"), Authorize(Roles = "moderator")]
         public async Task<IResult> DeleteCourse([FromQuery] string courseId)

@@ -18,4 +18,5 @@ export const userAtom = atomWithStorage("userFields",
         address: "",
         email: "add email",
         role: "guest",
+        profilePhotoUri: ""
     });

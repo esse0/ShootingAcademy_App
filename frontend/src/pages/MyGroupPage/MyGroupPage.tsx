@@ -37,7 +37,7 @@ function MyGroupPage() {
             city: "",
             address: "",
             email: "",
-            role: "",
+            role: ""
         },
         members: []
     });

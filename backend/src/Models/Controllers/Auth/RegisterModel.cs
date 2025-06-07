@@ -7,7 +7,7 @@ namespace ShootingAcademy.Models.Controllers.Auth
         [Required(ErrorMessage = "Укажите ваше имя")]
         public string name {  get; set; }
 
-        [Required(ErrorMessage = "Укажите ваше имя")]
+        [Required(ErrorMessage = "Укажите ваше фамилию")]
         public string lastName { get; set; }
 
         [EmailAddress(ErrorMessage = "Почта не верная")]

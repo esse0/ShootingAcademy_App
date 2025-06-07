@@ -10,12 +10,12 @@ import {
   Typography,
 } from "@mui/material";
 import { Link as RouterLink, useNavigate } from "react-router";
-import { LoginType } from "../../types/LogitType";
+import { LoginType } from "../../types/LoginType";
 import { useApi } from "../../hooks/useApi";
 import axios from "axios";
-import { FullUserModel } from "../../types/UserProfileData";
 import { userAtom } from "../../jotai/atoms";
 import { useSetAtom } from "jotai";
+import { UserModelWithProfilePhoto } from "../../types/UserModelWithProfilePhoto";
 
 export default function SignInPage() {
   const [emailError, setEmailError] = React.useState(false);
@@ -27,7 +27,7 @@ export default function SignInPage() {
   const setUserFieldsToAtom = useSetAtom(userAtom);
   const navigate = useNavigate();
 
-    const {resData: RecivedLogin, execute: executeLogin} = useApi<FullUserModel, LoginType>(async (body)=>{
+    const {resData: RecivedLogin, execute: executeLogin} = useApi<UserModelWithProfilePhoto, LoginType>(async (body)=>{
       return axios.post('/api/auth/signin', body);
     });
 

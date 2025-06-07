@@ -11,8 +11,8 @@ import { RegisterType } from '../../types/RegisterType';
 import { useApi } from '../../hooks/useApi';
 import { useEffect } from "react";
 import axios from 'axios';
-import { FullUserModel } from '../../types/UserProfileData';
 import { Link, Typography } from '@mui/material';
+import { UserModelWithProfilePhoto } from '../../types/UserModelWithProfilePhoto';
 
 export default function SignUp() {
   const [emailError, setEmailError] = React.useState(false);
@@ -26,7 +26,7 @@ export default function SignUp() {
 
   const navigate = useNavigate();
 
-  const {statusCode, execute: executeRegister} = useApi<FullUserModel, RegisterType>(async (body)=>{
+  const {statusCode, execute: executeRegister} = useApi<UserModelWithProfilePhoto, RegisterType>(async (body)=>{
     return axios.post('/api/auth/register', body);
   });
 

@@ -23,9 +23,8 @@ import { Avatar, Container, Menu, MenuItem, Stack } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SchoolIcon from '@mui/icons-material/School';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import { useAtomValue } from 'jotai';
+import { useAtom } from 'jotai';
 import { userAtom } from '../../jotai/atoms';
-import { FullUserModel } from '../../types/UserProfileData';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { useTestAuth } from '../../hooks/useTestAuth';
 import { useEffect } from 'react';
@@ -135,7 +134,7 @@ export default function AppMenu() {
         { icon: <GroupIcon />, label: 'My groups', to: 'mygroup' },
     ];
 
-    const userData: FullUserModel = useAtomValue(userAtom);
+    const [userData] = useAtom(userAtom);
 
     if (userData && userData.role == 'organisator')
         menuItems.push({
@@ -325,10 +324,10 @@ export default function AppMenu() {
                             <Stack direction="row" alignItems="center" spacing={2}>
                                 {!open ? (
                                     <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
-                                        <Avatar sx={{ width: 48, height: 48 }} />
+                                        <Avatar src={userData.profilePhotoUri} sx={{ width: 48, height: 48 }} />
                                     </IconButton>
                                 ) : (
-                                    <Avatar sx={{ width: 48, height: 48 }} />
+                                    <Avatar src={userData.profilePhotoUri} sx={{ width: 48, height: 48 }} />
                                 )}
 
                                 {open && (

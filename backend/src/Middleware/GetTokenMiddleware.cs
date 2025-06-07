@@ -1,8 +1,8 @@
 ﻿using ShootingAcademy.Models;
 using ShootingAcademy.Services;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using ShootingAcademy.Models.DB.ModelUser;
+using Microsoft.EntityFrameworkCore;
 
 namespace ShootingAcademy.Middleware
 {
@@ -19,52 +19,57 @@ namespace ShootingAcademy.Middleware
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public Task Invoke(HttpContext httpContext)
+        public async Task Invoke(HttpContext httpContext)
         {
             string? access = httpContext.Request.Cookies["AccessToken"];
             string? refresh = httpContext.Request.Cookies["RefreshToken"];
 
-            if (refresh == null || string.IsNullOrEmpty(refresh))
-                return _next(httpContext);
+            if (string.IsNullOrEmpty(refresh))
+            {
+                await _next(httpContext);
+                return;
+            }
 
-            ClaimsPrincipal? refreshJwtClaims = JwtManager.ValidateToken(refresh, JwtManager.GetParameters(_jwtManager.RefreshToken));
-
+            var refreshJwtClaims = JwtManager.ValidateToken(refresh, JwtManager.GetParameters(_jwtManager.RefreshToken));
             if (refreshJwtClaims == null)
-                return _next(httpContext);
-
-            var claims = refreshJwtClaims.Claims.Select(i => new { i.Type, i.Value }).ToList();
-
-            Guid userId = Guid.Parse(claims[0].Value);
-
-            using (var scope = _serviceScopeFactory.CreateScope())
             {
-                var dbContect = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-                var user = dbContect.Users.FirstOrDefault(u => u.Id == userId);
-               
-                if (user == null)
-                    return _next(httpContext);
-
-                if (user.RToken != refresh)
-                    return _next(httpContext);
+                await _next(httpContext);
+                return;
             }
 
-            ClaimsPrincipal? accessJwtClaims = JwtManager.ValidateToken(access, JwtManager.GetParameters(_jwtManager.AccessToken));
+            var claims = refreshJwtClaims.Claims.ToList();
+            Guid userId = Guid.Parse(claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
+            string role = claims.First(c => c.Type == ClaimTypes.Role).Value;
 
-            if (access == null || string.IsNullOrEmpty(access) || accessJwtClaims == null)
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null || user.RToken != refresh)
             {
-                access = JwtManager.GenerateJwtToken(_jwtManager.AccessToken, new User()
-                {
-                    Id = Guid.Parse(claims[0].Value),
-                    Role = claims[1].Value
-                });
-
-                httpContext.Response.Cookies.Append("AccessToken", access);
+                await _next(httpContext);
+                return;
             }
 
-            httpContext.Request.Headers.Append("Authorization", $"Bearer {access}");
+            var accessJwtClaims = JwtManager.ValidateToken(access, JwtManager.GetParameters(_jwtManager.AccessToken));
+            if (string.IsNullOrEmpty(access) || accessJwtClaims == null)
+            {
+                var newAccessToken = JwtManager.GenerateJwtToken(_jwtManager.AccessToken, user);
+                var newRefreshToken = JwtManager.GenerateJwtToken(_jwtManager.RefreshToken, user);
 
-            return _next(httpContext);
+                user.RToken = newRefreshToken;
+                user.RTokenExpiry = DateTime.UtcNow.AddMinutes(_jwtManager.RefreshToken.ExpiryMinutes);
+                await dbContext.SaveChangesAsync();
+
+                httpContext.Response.Cookies.Append("AccessToken", newAccessToken, _jwtManager.AccessTokenCookieOptions);
+                httpContext.Response.Cookies.Append("RefreshToken", newRefreshToken, _jwtManager.RefreshTokenCookieOptions);
+
+                access = newAccessToken;
+            }
+
+            httpContext.Request.Headers["Authorization"] = $"Bearer {access}";
+
+            await _next(httpContext);
         }
     }
 

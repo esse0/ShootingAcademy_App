@@ -31,6 +31,9 @@ namespace ShootingAcademy.Models.DB.ModelUser
         public string Role { get; set; }
 
         public string RToken { get; set; }
+        public DateTime? RTokenExpiry { get; set; }
+
+        public ProfilePhoto? ProfilePhoto { get; set; } = null;
 
         public List<GroupMember> AthleteGroups { get; set; } = [];
         public List<Course> InstructoredCourses { get; set; } = [];

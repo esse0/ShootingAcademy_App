@@ -12,18 +12,26 @@ namespace ShootingAcademy.Services
         public JwtSettings AccessToken { get; private set; }
         public JwtSettings RefreshToken { get; private set; }
 
-        public CookieOptions JwtCookieOptions { get; private set; }
+        public CookieOptions AccessTokenCookieOptions { get; private set; }
+        public CookieOptions RefreshTokenCookieOptions { get; private set; }
 
         public JwtManager(JwtSettings accessToken, JwtSettings refreshToken)
         {
             RefreshToken = refreshToken;
             AccessToken = accessToken;
 
-            JwtCookieOptions = new CookieOptions()
+            AccessTokenCookieOptions = new()
             {
                 HttpOnly = true,
                 SameSite = SameSiteMode.Strict,
-                MaxAge = TimeSpan.FromMinutes(120)
+                MaxAge = TimeSpan.FromMinutes(AccessToken.ExpiryMinutes)
+            };
+
+            RefreshTokenCookieOptions = new()
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict,
+                MaxAge = TimeSpan.FromMinutes(RefreshToken.ExpiryMinutes)
             };
         }
 

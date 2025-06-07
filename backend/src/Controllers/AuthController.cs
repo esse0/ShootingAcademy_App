@@ -1,10 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using ShootingAcademy.Models;
 using ShootingAcademy.Models.Controllers.Auth;
 using ShootingAcademy.Models.DB.ModelUser;
 using ShootingAcademy.Models.Exceptions;
 using ShootingAcademy.Services;
+using ShootingAcademy.Services.Media;
+using System.Security.Claims;
+using System.Text;
 
 namespace ShootingAcademy.Controllers
 {
@@ -15,12 +20,14 @@ namespace ShootingAcademy.Controllers
         private readonly JwtManager _jwtManager;
         private readonly PasswordHasher _passwordHasher;
         private readonly ApplicationDbContext _db;
+        private readonly IImageService _imageService;
 
-        public AuthController(JwtManager jwtManager, PasswordHasher passwordHasher, ApplicationDbContext db)
+        public AuthController(JwtManager jwtManager, PasswordHasher passwordHasher, ApplicationDbContext db, IImageService imageService)
         {
             _jwtManager = jwtManager;
             _passwordHasher = passwordHasher;
             _db = db;
+            _imageService = imageService;
         }
 
         [HttpPost("signin")]
@@ -40,37 +47,28 @@ namespace ShootingAcademy.Controllers
                 HttpContext.Response.Cookies.Append(
                     "AccessToken",
                     JwtManager.GenerateJwtToken(_jwtManager.AccessToken, user),
-                    _jwtManager.JwtCookieOptions
-                );
+                    _jwtManager.AccessTokenCookieOptions
+                );                                                                  
 
                 string token = JwtManager.GenerateJwtToken(_jwtManager.RefreshToken, user);
 
                 HttpContext.Response.Cookies.Append(
                     "RefreshToken",
                     token,
-                    _jwtManager.JwtCookieOptions
+                    _jwtManager.RefreshTokenCookieOptions
                 );
 
                 user.RToken = token;
+                user.RTokenExpiry = DateTime.UtcNow.AddMinutes(_jwtManager.RefreshToken.ExpiryMinutes);
 
                 _db.Users.Update(user);
 
                 await _db.SaveChangesAsync();
 
-                return Results.Json(new FullUserModel()
-                {
-                    FirstName = user.FirstName,
-                    SecoundName = user.SecoundName,
-                    PatronymicName = user.PatronymicName,
-                    Age = user.Age,
-                    Country = user.Country,
-                    City = user.City,
-                    Address = user.Address,
-                    Grade = user.Grade,
-                    Email = user.Email,
-                    Id = user.Id,
-                    Role = user.Role
-                });
+                var profileImage = await _imageService.GetFileUrl(user.Id);
+
+                return Results.Json(UserWithAvatar.FromEntity(user, profileImage.FileUri));
+                
             }
             catch (BaseException apperr)
             {
@@ -82,15 +80,6 @@ namespace ShootingAcademy.Controllers
             }
         }
 
-        [HttpPost("signout")]
-        public IResult logoutJwt()
-        {
-            HttpContext.Response.Cookies.Delete("AccessToken");
-            HttpContext.Response.Cookies.Delete("RefreshToken");
-
-            return Results.Ok();
-        }
-
         [HttpPost("register")]
         public async Task<IResult> Register([FromBody] RegisterModel model)
         {
@@ -99,7 +88,6 @@ namespace ShootingAcademy.Controllers
                 if (_db.Users.Where(usr => usr.Email == model.email).Any())
                     throw new BaseException("Данная почта занята!");
 
-                // Странно что половина полей пустые
                 var user = await _db.Users.AddAsync(new User()
                 {
                     FirstName = model.name,
@@ -118,20 +106,7 @@ namespace ShootingAcademy.Controllers
 
                 await _db.SaveChangesAsync();
 
-                return Results.Json(new FullUserModel()
-                {
-                    FirstName = user.Entity.FirstName,
-                    SecoundName = user.Entity.SecoundName,
-                    PatronymicName = user.Entity.PatronymicName,
-                    Age = user.Entity.Age,
-                    Country = user.Entity.Country,
-                    City = user.Entity.City,
-                    Address = user.Entity.Address,
-                    Grade = user.Entity.Grade,
-                    Email = user.Entity.Email,
-                    Id = user.Entity.Id,
-                    Role = user.Entity.Role
-                });
+                return Results.Json(UserWithAvatar.FromEntity(user.Entity, ""));
             }
             catch (BaseException exp)
             {
@@ -140,6 +115,99 @@ namespace ShootingAcademy.Controllers
             catch
             {
                 return Results.Problem("AuthController->Register", statusCode: 400);
+            }
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IResult> RefreshAccessToken()
+        {
+            try
+            {
+                var refreshToken = HttpContext.Request.Cookies["RefreshToken"];
+
+                if (string.IsNullOrEmpty(refreshToken))
+                    return Results.Unauthorized();
+
+                var principal = JwtManager.ValidateToken(refreshToken, new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime = false,
+                    ValidIssuer = _jwtManager.RefreshToken.Issuer,
+                    ValidAudience = _jwtManager.RefreshToken.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtManager.RefreshToken.SecretKey)),
+                    ClockSkew = TimeSpan.Zero
+                });
+
+                if (principal == null)
+                    return Results.Unauthorized();
+
+                var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                    return Results.Unauthorized();
+
+                var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == Guid.Parse(userId));
+
+                if (user == null || user.RToken != refreshToken)
+                    return Results.Unauthorized();
+
+                 if (user?.RTokenExpiry < DateTime.UtcNow)
+                    return Results.Unauthorized();
+
+                var newAccessToken = JwtManager.GenerateJwtToken(_jwtManager.AccessToken, user);
+                var newRefreshToken = JwtManager.GenerateJwtToken(_jwtManager.RefreshToken, user);
+
+                user.RToken = newRefreshToken;
+                user.RTokenExpiry = DateTime.UtcNow.AddMinutes(_jwtManager.RefreshToken.ExpiryMinutes);
+
+                await _db.SaveChangesAsync();
+
+                HttpContext.Response.Cookies.Append("AccessToken", newAccessToken, _jwtManager.AccessTokenCookieOptions);
+                HttpContext.Response.Cookies.Append("RefreshToken", newRefreshToken, _jwtManager.RefreshTokenCookieOptions);
+
+                return Results.Ok(new { message = "Токен обновлён" });
+            }
+            catch (BaseException exp)
+            {
+                return Results.Json(exp.GetModel(), statusCode: exp.Code);
+            }
+            catch
+            {
+                return Results.Problem("AuthController->Refresh", statusCode: 400);
+            }
+        }
+
+        [HttpPost("signout"), Authorize]
+        public async Task<IResult> LogoutJwt()
+        {
+            try
+            {
+                var userId = AutorizeData.FromContext(HttpContext).UserGuid;
+
+                var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null)
+                    return Results.Unauthorized();
+
+                user.RToken = "";
+                user.RTokenExpiry = null;
+
+                _db.Users.Update(user);
+                await _db.SaveChangesAsync();
+
+                HttpContext.Response.Cookies.Delete("AccessToken");
+                HttpContext.Response.Cookies.Delete("RefreshToken");
+
+                return Results.Ok(new { message = "Вы вышли из системы" });
+            }
+            catch (BaseException exp)
+            {
+                return Results.Json(exp.GetModel(), statusCode: exp.Code);
+            }
+            catch
+            {
+                return Results.Problem("Logout Error", statusCode: 500);
             }
         }
     }

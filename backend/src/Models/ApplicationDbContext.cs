@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using ShootingAcademy.Models.DB;
 using ShootingAcademy.Models.DB.ModelUser;
 
@@ -17,16 +18,19 @@ namespace ShootingAcademy.Models
         public DbSet<Competition> Competitions { get; set; }
         public DbSet<CompetitionMember> CompetitionMembers { get; set; }
         public DbSet<CourseMember> CourseMembers { get; set; }
+        public DbSet<MediaStorage> MediaStorages { get; set; }
+        public DbSet<ProfilePhoto> ProfilePhotos { get; set; }
+        public DbSet<LessonVideo> LessonVideos { get; set; }
+        public DbSet<PendingUpload> PendingUploads { get; set; }
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
         {
-            Database.EnsureCreated();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
-
             base.OnModelCreating(modelBuilder);
         }
     }

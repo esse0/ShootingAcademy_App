@@ -7,6 +7,7 @@ export interface UserProfileData{
     Country: string,
     City: string,
     Address: string,
+    ProfilePhotoUri:string
 }
 
 export interface FullUserModel { // from server
@@ -20,5 +21,5 @@ export interface FullUserModel { // from server
     city: string,
     address: string,
     email: string,
-    role: string,
+    role: string
 }

@@ -18,6 +18,6 @@ namespace ShootingAcademy.Models.DB
 
         public int? Oder { get; set; }
 
-        public string VideoLink { get; set; }
+        public LessonVideo? LessonVideo { get; set; }
     }
 }

@@ -18,6 +18,13 @@ services:
             DB_USER: ${DB_USER}
             DB_PASSWORD: ${DB_PASSWORD}
             SALT: ${SALT}
+            STORAGE_URI: ${STORAGE_URI}
+            STORAGE_ACCESS: ${STORAGE_ACCESS}
+            STORAGE_SECRET: ${STORAGE_SECRET}
+            STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME}
+            STORAGE_PRESIGN_EXPIRY_MINUTES: ${STORAGE_PRESIGN_EXPIRY_MINUTES}
+            ADMIN_EMAIL: ${ADMIN_EMAIL}
+            ADMIN_PASSWORD: ${ADMIN_PASSWORD}
         depends_on:
             - database
         networks:
@@ -41,7 +48,7 @@ services:
             context: ./frontend
             dockerfile: Dockerfile
         environment:
-            - BACKEND_API_URL=${BACKEND_API_URL}
+            BACKEND_API_URL: ${BACKEND_API_URL}
         ports:
             - "80:80"
         depends_on:

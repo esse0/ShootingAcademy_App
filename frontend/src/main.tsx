@@ -4,12 +4,19 @@ import './index.css'
 import App from './App.tsx'
 import { BrowserRouter } from 'react-router'
 import ScrollToTop from './hooks/ScrollToTop.ts'
+import { SnackbarProvider } from 'notistack'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <ScrollToTop/>
-      <App />
+      <SnackbarProvider
+        maxSnack={3}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        autoHideDuration={3000}
+      >
+        <ScrollToTop />
+        <App />
+      </SnackbarProvider>
     </BrowserRouter>
   </StrictMode>,
-)
+);
