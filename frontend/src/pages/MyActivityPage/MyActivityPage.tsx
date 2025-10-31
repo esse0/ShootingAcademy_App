@@ -7,6 +7,7 @@ import MyCoursesPage from "../MyCoursesPage/MyCoursesPage";
 import MyCompetitionsPage from "../MyCompetitionsPage/MyCompetitionsPage";
 import HistoryCompetitionPage from "../HistoryCompititionPage/HistoryCompetitionPage";
 import HistoryCoursesPage from "../HistoryCoursesPage/HistoryCoursesPage";
+import ModerateTraningPage from "../ModerateTraningPage/ModerateTraningPage";
 
 function MyActivityPage() {
     const [value, setValue] = React.useState(0);
@@ -43,7 +44,7 @@ function MyActivityPage() {
             <HistoryCompetitionPage />
           </CustomTabPanel>
           <CustomTabPanel value={value} index={5}>
-            <></>
+            <ModerateTraningPage isModerate={false}/>
           </CustomTabPanel>
         </Box>
       </>

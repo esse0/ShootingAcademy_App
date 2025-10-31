@@ -211,7 +211,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
             </Button>
           </Box>*/}
 
-            <Typography className='signup_text' sx={{ textAlign: 'center' }}>
+            <Typography className='signup_text' sx={{ textAlign: 'center', mt:"20px" }}>
               Already have an account?{' '}
               <Link
                 className='signup_text'

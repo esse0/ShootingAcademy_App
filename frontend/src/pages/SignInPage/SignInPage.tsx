@@ -193,7 +193,7 @@ export default function SignInPage() {
         </Button>
          */}
       </Box>
-      <Typography className="signin_label" sx={{ textAlign: "center" }}>
+      <Typography className="signin_label" sx={{ textAlign: "center", mt:"20px" }}>
           Don&apos;t have an account?{" "}
           <Link
             className="signin_label"

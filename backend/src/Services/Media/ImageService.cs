@@ -160,7 +160,7 @@ namespace ShootingAcademy.Services.Media
                         }
                         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
                         {
-                            
+
                         }
                         catch (AmazonS3Exception ex)
                         {
@@ -185,6 +185,5 @@ namespace ShootingAcademy.Services.Media
                 throw;
             }
         }
-
     }
 }

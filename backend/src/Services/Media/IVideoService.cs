@@ -7,5 +7,6 @@ namespace ShootingAcademy.Services.Media
     {
         Task<PresignedUrlResponse> GeneratePresignedUploadAsync(FileUploadRequest dto, Guid userId);
         Task<MediaStorage> ConfirmUploadAsync(FileConfirmRequest request, Guid userId);
+        Task<FileUriReponse> GetFileUrl(Guid videoId);
     }
 }

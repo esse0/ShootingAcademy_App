@@ -1,6 +1,7 @@
 import { Stack, TextField, Typography} from '@mui/material';
 import { CreateCourseType } from '../../types/CourseTypes';
 import { ChangeEvent } from 'react';
+import VideoUploader from '../VideoUploader/VideoUploader';
 
 
 interface Props {
@@ -54,9 +55,29 @@ export function CreateCourleModuleLesson(props: Props) {
             </Stack>
             <Stack>
                 <Typography variant="body2" fontFamily={'inherit'}>
-                    VideoLink
+                    Video
                 </Typography>
-                <TextField name='videoLink' variant="outlined" placeholder="" size="small" onChange={onChange} sx={{ width: 300 }} />
+                
+                <VideoUploader onUploaded={(videoId) => {
+                    props.setCourse((prev) => ({
+                    ...prev,
+                    modules: prev.modules.map((modul) => {
+                        if (modul.id === props.moduleIdCount) {
+                        return {
+                            ...modul,
+                            lessons: modul.lessons.map((lesson) => {
+                            if (lesson.id === props.LessonIdCount) {
+                                return { ...lesson, videoId: videoId };
+                            }
+                            return lesson;
+                            }),
+                        };
+                        }
+                        return modul;
+                    }),
+                    }));
+                }}/>
+
             </Stack>
         </Stack>
     );

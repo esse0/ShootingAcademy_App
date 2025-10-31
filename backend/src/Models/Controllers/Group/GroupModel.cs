@@ -1,5 +1,4 @@
 ﻿using ShootingAcademy.Models.DB;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ShootingAcademy.Models.Controllers.Group
 {

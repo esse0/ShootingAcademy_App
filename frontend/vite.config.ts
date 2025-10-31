@@ -9,7 +9,12 @@ export default defineConfig({
         '/api': {
             target: process.env.BACKEND_API_URL,
             changeOrigin: true,
+        },
+        '/hubs': {
+            target: process.env.BACKEND_API_URL,
+            ws: true,
+            changeOrigin: true,
         }
     }
-}
+  }
 });

@@ -47,9 +47,9 @@ function SettingsPage(){
     });
   });
 
-  const {execute: executeAcceptDownload} = useApi<null, string>(async (courseId) => {
+  const {execute: executeAcceptDownload} = useApi<null, string>(async (fileId) => {
     return axios.post('/api/image/confirm', null, {
-      params: { FileId: courseId },
+      params: { FileId: fileId },
     });
   })
 

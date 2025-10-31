@@ -19,7 +19,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { Outlet, NavLink as RouterLink, useNavigate } from 'react-router';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GroupIcon from '@mui/icons-material/Group';
-import { Avatar, Container, Menu, MenuItem, Stack } from '@mui/material';
+import { Avatar, Badge, Container, Menu, MenuItem, Stack, Pagination } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SchoolIcon from '@mui/icons-material/School';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -30,7 +30,13 @@ import { useTestAuth } from '../../hooks/useTestAuth';
 import { useEffect } from 'react';
 import { useApi } from '../../hooks/useApi';
 import axios from 'axios';
-import ExtensionIcon from '@mui/icons-material/Extension';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import { useWebSocketContext } from '../../hooks/WebSocketContext';
+import { NotificationCard } from '../../components/NotificationCard/NotificationCard';
+import { useNotifications } from '../../hooks/useNotifications';
+import CorporateFareIcon from '@mui/icons-material/CorporateFare';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 const drawerWidth = 300;
 
@@ -120,6 +126,10 @@ export default function AppMenu() {
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
 
+    const ws = useWebSocketContext();
+    const respondToInvitation = ws?.respondToInvitation;
+    const setOnUpdateNotifications = ws?.setOnUpdateNotifications;
+
     useTestAuth();
     const navigate = useNavigate();
 
@@ -136,14 +146,30 @@ export default function AppMenu() {
 
     const [userData] = useAtom(userAtom);
 
-    if (userData && userData.role == 'organisator')
+    if (userData && userData.role == 'organization')
         menuItems.push({
             icon: <ViewListIcon />,
             label: 'Competition moderation',
             to: 'moderatecompetitions',
         });
 
-    if (userData && userData.role == 'moderator')
+    if(userData && userData.role == 'organization' || userData.role == 'coach'){
+        menuItems.push({
+            icon: <CorporateFareIcon />,
+            label: 'Organization',
+            to: 'organization',
+        });
+    }
+
+    if(userData && userData.role == 'coach'){
+        menuItems.push({
+            icon: <CalendarMonthIcon />,
+            label: 'Tranings',
+            to: 'tranings',
+        });
+    }
+
+    if (userData && userData.role == 'organization')
         menuItems.push({
             icon: <ViewListIcon />,
             label: 'Courses moderation',
@@ -152,7 +178,7 @@ export default function AppMenu() {
 
     if (userData && userData.role == 'admin')
         menuItems.push({
-            icon: <ExtensionIcon />,
+            icon: <AdminPanelSettingsIcon />,
             label: 'Admin panel',
             to: 'adminPanel',
         });
@@ -167,6 +193,17 @@ export default function AppMenu() {
 
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const isMenuOpen = Boolean(anchorEl);
+
+    const [notificationsAnchorEl, setNotificationsAnchorEl] = React.useState<null | HTMLElement>(null);
+    const notificationsMenuOpen = Boolean(notificationsAnchorEl);
+
+    const handleNotificationsClick = (event: React.MouseEvent<HTMLElement>) => {
+        setNotificationsAnchorEl(event.currentTarget);
+    };
+
+    const handleNotificationsClose = () => {
+        setNotificationsAnchorEl(null);
+    };
 
     // Открытие меню
     const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -199,6 +236,39 @@ export default function AppMenu() {
         }
     }, [RecivedStatus]);
 
+    const {
+        notifications,
+        currentPage,
+        totalPages,
+        refreshNotifications,
+        setPage,
+        allNotifications
+    } = useNotifications(5);
+
+    const handleAcceptInvitation = async (notificationId: string) => {
+        try {
+            if (respondToInvitation) respondToInvitation(notificationId, true);
+        } catch (error) {
+            console.error('Ошибка при принятии приглашения:', error);
+        }
+    };
+
+    const handleDeclineInvitation = async (notificationId: string) => {
+        try {
+            if (respondToInvitation) respondToInvitation(notificationId, false);
+        } catch (error) {
+            console.error('Ошибка при отклонении приглашения:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (setOnUpdateNotifications) {
+            setOnUpdateNotifications(() => {
+                refreshNotifications();
+            });
+        }
+    }, [setOnUpdateNotifications]);
+
     return (
         <Box sx={{ display: 'flex' }}>
             <CssBaseline />
@@ -230,6 +300,64 @@ export default function AppMenu() {
                         <span style={{ color: '#455CC7' }}>Shooting</span>
                         Academy
                     </Typography>
+                    <IconButton
+                        color="inherit"
+                        onClick={handleNotificationsClick}
+                        sx={{ marginLeft: 'auto' }}
+                    >
+                        <Badge badgeContent={allNotifications.filter(n => !n.isRead).length} color="error">
+                            <NotificationsIcon />
+                        </Badge>
+                    </IconButton>
+
+                    <Menu
+                        anchorEl={notificationsAnchorEl}
+                        open={notificationsMenuOpen}
+                        onClose={handleNotificationsClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                        }}
+                        PaperProps={{
+                            sx: {
+                                width: 360,
+                                maxHeight: 400,
+                                overflowY: 'auto'
+                            }
+                        }}
+                    >
+                        {notifications.length === 0 ? (
+                            <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
+                                У вас пока нет уведомлений
+                            </Box>
+                        ) : (
+                            <>
+                                {notifications.map((notification) => (
+                                    <NotificationCard
+                                        key={notification.id}
+                                        notification={notification}
+                                        onAccept={() => handleAcceptInvitation(notification.id)}
+                                        onDecline={() => handleDeclineInvitation(notification.id)}
+                                    />
+                                ))}
+                                {totalPages > 1 && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 1 }}>
+                                        <Pagination
+                                            count={totalPages}
+                                            page={currentPage}
+                                            onChange={(_, page) => setPage(page)}
+                                            size="small"
+                                            color="primary"
+                                        />
+                                    </Box>
+                                )}
+                            </>
+                        )}
+                    </Menu>
                 </Toolbar>
             </AppBar>
             <Drawer variant="permanent" open={open}>
@@ -266,11 +394,11 @@ export default function AppMenu() {
                                         },
                                         open
                                             ? {
-                                                  justifyContent: 'initial',
-                                              }
+                                                justifyContent: 'initial',
+                                            }
                                             : {
-                                                  justifyContent: 'center',
-                                              },
+                                                justifyContent: 'center',
+                                            },
                                     ]}
                                 >
                                     <ListItemIcon
@@ -282,11 +410,11 @@ export default function AppMenu() {
                                             },
                                             open
                                                 ? {
-                                                      mr: 3,
-                                                  }
+                                                    mr: 3,
+                                                }
                                                 : {
-                                                      mr: 'auto',
-                                                  },
+                                                    mr: 'auto',
+                                                },
                                         ]}
                                     >
                                         {element.icon}
@@ -300,11 +428,11 @@ export default function AppMenu() {
                                         sx={[
                                             open
                                                 ? {
-                                                      opacity: 1,
-                                                  }
+                                                    opacity: 1,
+                                                }
                                                 : {
-                                                      opacity: 0,
-                                                  },
+                                                    opacity: 0,
+                                                },
                                         ]}
                                     />
                                 </ListItemButton>

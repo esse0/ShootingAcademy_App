@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 using ShootingAcademy.Models.DB;
 using ShootingAcademy.Models.DB.ModelUser;
+using Range = ShootingAcademy.Models.DB.Range;
 
 namespace ShootingAcademy.Models
 {
@@ -22,6 +22,11 @@ namespace ShootingAcademy.Models
         public DbSet<ProfilePhoto> ProfilePhotos { get; set; }
         public DbSet<LessonVideo> LessonVideos { get; set; }
         public DbSet<PendingUpload> PendingUploads { get; set; }
+        public DbSet<Organization> Organizations { get; set; }
+        public DbSet<OrganizationMembership> OrganizationMemberships { get; set; }
+        public DbSet<TrainingSession> TrainingSessions { get; set; }
+        public DbSet<Range> Ranges { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -31,6 +36,20 @@ namespace ShootingAcademy.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
+
+            // Настройка связей для LessonVideo
+            modelBuilder.Entity<LessonVideo>()
+                .HasOne(lv => lv.Lesson)
+                .WithOne(l => l.LessonVideo)
+                .HasForeignKey<LessonVideo>(lv => lv.LessonId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LessonVideo>()
+                .HasOne(lv => lv.Media)
+                .WithOne(m => m.LessonVideo)
+                .HasForeignKey<LessonVideo>(lv => lv.MediaId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             base.OnModelCreating(modelBuilder);
         }
     }

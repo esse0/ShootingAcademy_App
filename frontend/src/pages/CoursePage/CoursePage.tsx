@@ -5,6 +5,7 @@ import {
     Button,
     Card,
     CardContent,
+    Checkbox,
     List,
     ListItemButton,
     Stack,
@@ -13,29 +14,31 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ReactPlayer from 'react-player';
 import React, { useEffect, useState } from 'react';
-import ModulesType, { CourseType } from '../../types/CourseTypes';
 import { useApi } from '../../hooks/useApi';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router';
+import ModulesTypeWithVideo, { CourseTypeWithVideo } from '../../types/CourseWithVideo';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { useSnackbar } from 'notistack';
 
 function CoursePage() {
     const navigate = useNavigate();
     const params = useParams();
     const courseId = params.id;
+    const { enqueueSnackbar } = useSnackbar();
 
-    const [modules, setModules] = React.useState(Array<ModulesType>);
-
+    const [modules, setModules] = React.useState(Array<ModulesTypeWithVideo>);
     const [selectedLessonId, setSelectedLessonId] = useState('');
-
     const [lessonData, setLessonData] = useState({
         id: '',
         title: '',
         description: '',
         videoLink: '',
+        isCompleted: false,
         isLast: false,
     });
 
-    const { resData: course, execute: execute } = useApi<CourseType>(async () => {
+    const { resData: course, execute: execute } = useApi<CourseTypeWithVideo>(async () => {
         return axios.get('/api/course/fulldata', {
             params: { id: courseId },
         });
@@ -44,13 +47,29 @@ function CoursePage() {
     const {
         execute: executeFinishCourse,
         statusCode: finishCourseStatusCode,
+        error: finishCourseError
     } = useApi(async () => {
         return axios.put('/api/Course/leaveCourse', null, { params: { courseId: courseId } });
     });
 
+    const {
+        execute: executeMarkLesson,
+        error: markLessonError
+    } = useApi(async () => {
+        return axios.post(`/api/CourseProgress/${courseId}/lessons/${lessonData.id}/complete`);
+    });
+
+    const {
+        execute: executeUnmarkLesson,
+        error: unmarkLessonError
+    } = useApi(async () => {
+        return axios.delete(`/api/CourseProgress/${courseId}/lessons/${lessonData.id}/complete`);
+    });
+
     useEffect(() => {
         if (!course) return;
-       
+        console.log('Course data:', course);
+        console.log('Course is_closed:', course.is_closed);
         setModules(course.modules);
     }, [course]);
 
@@ -59,8 +78,78 @@ function CoursePage() {
     }, []);
 
     useEffect(() => {
-        if (finishCourseStatusCode == 200) navigate('/app/myactivity');
+        if (finishCourseStatusCode === 200) {
+            enqueueSnackbar('Курс успешно завершен', { variant: 'success' });
+            navigate('/app/myactivity');
+        }
     }, [finishCourseStatusCode]);
+
+    useEffect(() => {
+        if (finishCourseError) {
+            const errorMessage = finishCourseError.response?.data?.message || 'Ошибка завершения курса';
+            enqueueSnackbar(errorMessage, { variant: 'error' });
+        }
+    }, [finishCourseError, enqueueSnackbar]);
+
+    useEffect(() => {
+        if (markLessonError) {
+            const errorMessage = markLessonError.response?.data?.message || 'Ошибка при отметке урока';
+            enqueueSnackbar(errorMessage, { variant: 'error' });
+        }
+    }, [markLessonError, enqueueSnackbar]);
+
+    useEffect(() => {
+        if (unmarkLessonError) {
+            const errorMessage = unmarkLessonError.response?.data?.message || 'Ошибка при снятии отметки с урока';
+            enqueueSnackbar(errorMessage, { variant: 'error' });
+        }
+    }, [unmarkLessonError, enqueueSnackbar]);
+
+    const handleChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const isChecked = event.target.checked;
+        
+        try {
+            if (isChecked) {
+                await executeMarkLesson();
+            } else {
+                await executeUnmarkLesson();
+            }
+            
+            // Обновляем состояние урока
+            setLessonData(prev => ({
+                ...prev,
+                isCompleted: isChecked
+            }));
+
+            // Обновляем состояние в списке уроков
+            setModules(prevModules => 
+                prevModules.map(module => ({
+                    ...module,
+                    lessons: module.lessons.map(lesson => 
+                        lesson.id === lessonData.id 
+                            ? { ...lesson, isCompleted: isChecked }
+                            : lesson
+                    )
+                }))
+            );
+
+            // Перезагружаем данные курса для обновления прогресса
+            const response = await execute();
+            if (response?.data) {
+                setModules(response.data.modules);
+            }
+        } catch (error) {
+            console.error('Ошибка при обновлении статуса урока:', error);
+        }
+    };
+
+    const handleFinishCourse = async () => {
+        try {
+            await executeFinishCourse();
+        } catch (error) {
+            console.error('Ошибка при завершении курса:', error);
+        }
+    };
 
     return (
         <Stack direction={'row'} gap={'40px'}>
@@ -87,7 +176,8 @@ function CoursePage() {
                                                 id: lesson.id,
                                                 title: lesson.title,
                                                 description: lesson.description,
-                                                videoLink: lesson.videoLink ?? '',
+                                                videoLink: lesson.videoUri ?? '',
+                                                isCompleted: lesson.isCompleted,
                                                 isLast:
                                                     lesson.id === module.lessons[module.lessons.length - 1].id &&
                                                     module.id === modules[modules.length - 1].id,
@@ -105,9 +195,12 @@ function CoursePage() {
                                             },
                                         }}
                                     >
-                                        <Typography fontFamily={'var(--primary-font)'} fontWeight={'inherit'}>
-                                            {lesson.title}
-                                        </Typography>
+                                        <Stack flexDirection="row" justifyContent="space-between" width="100%">
+                                            <Typography fontFamily={'var(--primary-font)'} fontWeight={'inherit'}>
+                                                {lesson.title}
+                                            </Typography>
+                                            {lesson.isCompleted ? <CheckCircleOutlineIcon color='success'/> : <></>}
+                                        </Stack>
                                     </ListItemButton>
                                 ))}
                             </List>
@@ -127,21 +220,30 @@ function CoursePage() {
                             {lessonData.videoLink != '' && (
                                 <ReactPlayer minWidth={'900px'} width={'100%'} controls url={lessonData.videoLink} />
                             )}
-                            <Typography variant="body1" fontFamily={'var(--primary-font)'}>
-                                {lessonData.description}
-                            </Typography>
-                            {lessonData.isLast && (
+                            <Stack>
+                                <Typography variant="body1" fontFamily={'var(--primary-font)'}>
+                                    {lessonData.description}
+                                </Typography>
+                                <Stack flexDirection="row" gap="5px" alignItems="center">
+                                   <Checkbox
+                                        disabled={course?.is_closed}
+                                        checked={lessonData.isCompleted}
+                                        onChange={handleChange}
+                                        inputProps={{ 'aria-label': 'controlled' }}
+                                    />
+                                    Mark as complete
+                                </Stack>
+                            </Stack>
+                            {lessonData.isLast && course && !course.is_closed && (
                                 <Button
-                                    onClick={() => {
-                                        executeFinishCourse();
-                                    }}
+                                    onClick={handleFinishCourse}
                                     variant="contained"
                                     color="error"
                                     sx={{ ml: 'auto', maxWidth: '200px', maxHeight: '40px' }}
                                 >
                                     End course
                                 </Button>
-                            )}{' '}
+                            )}
                         </>
                     ) : (
                         <Typography
@@ -152,7 +254,7 @@ function CoursePage() {
                             fontFamily={'var(--primary-font)'}
                             color={'text.secondary'}
                         >
-                            Select a lesson
+                            Выберите урок
                         </Typography>
                     )}
                 </CardContent>

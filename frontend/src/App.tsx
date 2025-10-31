@@ -14,13 +14,24 @@ import CompetitionPage from './pages/CompetitionPage/CompetitionPage';
 import { BackEndErrorPage } from './pages/BackEndErrorPage/BackEndErrorPage';
 import GroupsPage from './pages/GroupsPage/GroupsPage';
 import MyGroupPage from './pages/MyGroupPage/MyGroupPage';
-import CoursePage from './pages/CoursePage/CoursePage';
 import SettingsPage from './pages/SettingsPage/SettingsPage';
 import CreateCompetitonPage from './pages/CreateCompetitonPage/CreateCompetitionPage';
 import CreateCoursePage from './pages/CreateCoursePage/CreateCoursePage';
 import CompetitionModeratePage from './pages/CompetitionModeratePage/CompetitionModeratePage';
 import CourseModeratePage from './pages/CourseModeratePage/CourseModeratePage';
 import { AdminPage } from './pages/AdminPage/AdminPage';
+import OrganizationPage from './pages/OrganizationPage/OrganizationPage';
+import { WebSocketProvider } from './hooks/WebSocketContext';
+import ModerateTraningPage from './pages/ModerateTraningPage/ModerateTraningPage';
+import CoursePage from './pages/CoursePage/CoursePage';
+
+const ProtectedLayout = () => {
+    return (
+        <WebSocketProvider>
+            <AppLayout />
+        </WebSocketProvider>
+    );
+};
 
 function App() {
     return (
@@ -48,7 +59,7 @@ function App() {
                 <Route path="*" element={<ErrorPage />}></Route>
             </Route>
 
-            <Route path="/app" element={<AppLayout />}>
+            <Route path="/app" element={<ProtectedLayout />}>
                 <Route path="adminPanel" element={<AdminPage></AdminPage>}></Route>
                 <Route index element={<Navigate to="myactivity" replace />} />
                 <Route path="myactivity" element={<MyActivityPage />}></Route>
@@ -71,6 +82,8 @@ function App() {
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="moderatecourses" element={<CourseModeratePage />}></Route>
                 <Route path="moderatecourses/create" element={<CreateCoursePage />} />
+                <Route path="organization" element={<OrganizationPage />} />
+                <Route path="tranings" element={<ModerateTraningPage isModerate={true} />} />
 
                 <Route path="*" element={<ErrorPage />}></Route>
             </Route>

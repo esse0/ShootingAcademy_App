@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ShootingAcademy.Models.DB.ModelUser
 {
@@ -39,5 +40,11 @@ namespace ShootingAcademy.Models.DB.ModelUser
         public List<Course> InstructoredCourses { get; set; } = [];
         public List<CourseMember> Courses { get; set; } = [];
         public List<CompetitionMember> Competitions { get; set; } = [];
+        public List<TrainingSession> TrainingSessionsAsTrainer { get; set; } = [];
+        public List<OrganizationMembership> OrganizationMemberships { get; set; } = [];
+        [InverseProperty("User")]
+        public List<Notification> ReceivedNotifications { get; set; } = [];
+        [InverseProperty("Sender")]
+        public List<Notification> SentNotifications { get; set; } = [];
     }
 }

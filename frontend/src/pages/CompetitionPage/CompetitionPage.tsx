@@ -13,6 +13,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { useAtomValue } from "jotai";
 import { userAtom } from "../../jotai/atoms";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 
 function CompetitionPage(){
     const params = useParams();
@@ -57,9 +58,9 @@ function CompetitionPage(){
         return axios.put('/api/competition/status', null, {params: {competitionId: competitionId, newStatus: status}});
     })
 
-    // const {resData: RecivedDownloadFile, execute: executeDownloadResults, statusCode: RecivedDownloadCode, setStatusCode: setStatusCodeDownload} = useApi<Blob>(async ()=>{ 
-    //     return axios.get('/api/competition/export',{params: {competitionId: competitionId}, responseType: 'blob', headers:{"Content-Type":"application/json"}});
-    // })
+    const {execute: executeDownloadResults} = useApi<Blob>(async ()=>{ 
+        return axios.get('/api/competition/export',{params: {competitionId: competitionId}, responseType: 'blob', headers:{"Content-Type":"application/json"}});
+    })
 
     const [competition, setCompetition] = useState<CompetitionType>();
 
@@ -282,9 +283,27 @@ function CompetitionPage(){
 
     
 
-    // function handleDownload(): void {
-    //     executeDownloadResults();
-    // }
+    function handleDownload(): void {
+    executeDownloadResults()
+        .then((response) => {
+            if (!response) return;
+
+            const blob = response.data;
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'competition_members.json';
+            document.body.appendChild(a);
+            a.click();
+
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch((error) => {
+            console.error('Download failed', error);
+        });
+    }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -361,7 +380,7 @@ function CompetitionPage(){
                             </Stack>
                         }
                         {
-                            userData.role === "organisator" &&
+                            userData.role === "organization" &&
                             <Stack>
                                 <Stack>
                                     <Typography variant="body1" fontFamily="inherit" fontWeight={"bold"}>Status:</Typography>
@@ -392,12 +411,11 @@ function CompetitionPage(){
                                 </IconButton>
                             </Stack>
                             </Stack>
-                            
-                            
                         }
-                        {/* <IconButton onClick={handleDownload}>
+                        <IconButton onClick={handleDownload}>
                             <CloudDownloadIcon/>
-                        </IconButton> */}
+                        </IconButton>
+                        
                     </Stack>
                 </Stack>
                 <Card variant="outlined" sx={{ width: '100%' }}>

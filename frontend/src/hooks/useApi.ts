@@ -1,19 +1,32 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import axios, { AxiosError, AxiosResponse } from 'axios';
+import { useSnackbar } from 'notistack';
 
 interface ServerError {
-    error: boolean;
-    show: boolean;
-    message: string;
-    code: string;
+    Error: boolean;
+    Show: boolean;
+    Message: string;
+    Code: string;
 }
 
-export function useApi<T, D = undefined>(request: (data?: D) => Promise<AxiosResponse<T>>) {
+interface UseApiReturn<T> {
+    resData: T | null;
+    setResData: React.Dispatch<React.SetStateAction<T | null>>;
+    loading: boolean;
+    execute: (body?: any) => Promise<AxiosResponse<T> | undefined>;
+    statusCode: number | null;
+    setStatusCode: React.Dispatch<React.SetStateAction<number | null>>;
+    error: any;
+}
+
+export function useApi<T, D = undefined>(request: (data?: D) => Promise<AxiosResponse<T>>): UseApiReturn<T> {
     const [resData, setData] = useState<T | null>(null);
     const [statusCode, setStatusCode] = useState<number | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<any>(null);
     const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
 
     const refreshTokens = async () => {
         try {
@@ -27,6 +40,7 @@ export function useApi<T, D = undefined>(request: (data?: D) => Promise<AxiosRes
 
     const execute = async (body?: D) => {
         setLoading(true);
+        setError(null);
         try {
             const response: AxiosResponse<T> = await request(body);
             setData(response.data);
@@ -37,6 +51,7 @@ export function useApi<T, D = undefined>(request: (data?: D) => Promise<AxiosRes
             let errorMessage = 'Неизвестная ошибка';
 
             setData(null);
+            setError(err);
 
             if (error.response?.status === 401) {
                 const refreshed = await refreshTokens();
@@ -59,12 +74,12 @@ export function useApi<T, D = undefined>(request: (data?: D) => Promise<AxiosRes
             if (error.response) {
                 const serverError = error.response.data;
 
-                if (serverError && serverError.show === true) {
-                    alert(serverError.message);
+                if (serverError && serverError.Show === true) {
+                    enqueueSnackbar(serverError.Message, { variant: 'error' });
                     return;
                 }
 
-                errorMessage = serverError.message || 'Отсутствует сообщение об ошибке';
+                errorMessage = serverError.Message || 'Отсутствует сообщение об ошибке';
                 console.error('Ошибка ответа сервера:', errorMessage);
 
                 navigate(
@@ -86,5 +101,5 @@ export function useApi<T, D = undefined>(request: (data?: D) => Promise<AxiosRes
         }
     };
 
-    return { resData, setResData: setData, loading, execute, statusCode, setStatusCode };
+    return { resData, setResData: setData, loading, execute, statusCode, setStatusCode, error };
 }

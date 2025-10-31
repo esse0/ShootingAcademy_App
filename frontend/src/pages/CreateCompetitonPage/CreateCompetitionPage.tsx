@@ -20,9 +20,12 @@ import axios from 'axios';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
+import { TEXTS } from '../../constants/texts';
 
 function CreateCompetitonPage() {
     const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
     const { execute: executeCreateCompetition, statusCode: RecivedStatusCode } =
         useApi<null, CompetitionType>(async (body) => {
             return axios.post('/api/Competition/create', body);
@@ -47,12 +50,14 @@ function CreateCompetitonPage() {
 
     useEffect(() => {
         if (!RecivedStatusCode) return;
-        if (RecivedStatusCode === 201) {
+        console.log('Received status code:', RecivedStatusCode);
+        if (RecivedStatusCode === 200 || RecivedStatusCode === 201) {
+            enqueueSnackbar(TEXTS.COMPETITION_CREATED, { variant: 'success' });
             navigate('/app/moderatecompetitions');
         } else {
-            alert('Не удалось создать competition');
+            enqueueSnackbar(TEXTS.COMPETITION_CREATE_ERROR, { variant: 'error' });
         }
-    }, [RecivedStatusCode]);
+    }, [RecivedStatusCode, navigate, enqueueSnackbar]);
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -77,7 +82,7 @@ function CreateCompetitonPage() {
                     <Stack flexDirection={'row'} gap={2}>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Title
+                                {TEXTS.COMPETITION_TITLE}
                             </Typography>
                             <TextField
                                 variant="outlined"
@@ -89,7 +94,7 @@ function CreateCompetitonPage() {
                         </Stack>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Description
+                                {TEXTS.COMPETITION_DESCRIPTION}
                             </Typography>
                             <TextField
                                 variant="outlined"
@@ -107,7 +112,7 @@ function CreateCompetitonPage() {
                                     variant="body2"
                                     fontFamily={'inherit'}
                                 >
-                                    Date
+                                    {TEXTS.COMPETITION_DATE}
                                 </Typography>
                                 <DatePicker
                                     label="Basic date picker"
@@ -126,7 +131,7 @@ function CreateCompetitonPage() {
                                     variant="body2"
                                     fontFamily={'inherit'}
                                 >
-                                    Time
+                                    {TEXTS.COMPETITION_TIME}
                                 </Typography>
                                 <TimePicker
                                     label="Basic time picker"
@@ -144,7 +149,7 @@ function CreateCompetitonPage() {
                     <Stack flexDirection={'row'} gap={2}>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Max members count
+                                {TEXTS.COMPETITION_MAX_MEMBERS}
                             </Typography>
                             <TextField
                                 type="number"
@@ -152,10 +157,10 @@ function CreateCompetitonPage() {
                                 placeholder="100"
                                 size="small"
                                 {...register('maxMemberCount', {
-                                    required: 'MaxMemberCount is required',
+                                    required: TEXTS.REQUIRED_FIELD,
                                     validate: (value) =>
                                         value > 0 ||
-                                        'MaxMemberCount must be a positive number',
+                                        TEXTS.INVALID_NUMBER,
                                 })}
                                 sx={{ width: 400 }}
                             />
@@ -170,7 +175,7 @@ function CreateCompetitonPage() {
 
                 <Stack>
                     <Typography variant="body2" fontFamily={'inherit'}>
-                        Exercises
+                        {TEXTS.COMPETITION_EXERCISE}
                     </Typography>
                     <Select
                         labelId="label"
@@ -179,17 +184,17 @@ function CreateCompetitonPage() {
                         {...register('exercise')}
                         sx={{ width: 820 }}
                     >
-                        <MenuItem value="PN rifle, 10m, 20 shots">
-                            PN rifle, 10m, 20 shots
+                        <MenuItem value={TEXTS.EXERCISES.RIFLE_10M_20}>
+                            {TEXTS.EXERCISES.RIFLE_10M_20}
                         </MenuItem>
-                        <MenuItem value="PN rifle, 10m, 40 shots">
-                            PN rifle, 10m, 40 shots
+                        <MenuItem value={TEXTS.EXERCISES.RIFLE_10M_40}>
+                            {TEXTS.EXERCISES.RIFLE_10M_40}
                         </MenuItem>
-                        <MenuItem value="Pistol, 10 meters, 60 shots">
-                            Pistol, 10 meters, 60 shots
+                        <MenuItem value={TEXTS.EXERCISES.PISTOL_10M_60}>
+                            {TEXTS.EXERCISES.PISTOL_10M_60}
                         </MenuItem>
-                        <MenuItem value="Pistol, 25 meters, 60 shots">
-                            Pistol, 25 meters, 60 shots
+                        <MenuItem value={TEXTS.EXERCISES.PISTOL_25M_60}>
+                            {TEXTS.EXERCISES.PISTOL_25M_60}
                         </MenuItem>
                     </Select>
                 </Stack>
@@ -201,12 +206,12 @@ function CreateCompetitonPage() {
                         fontWeight={600}
                         fontFamily={'inherit'}
                     >
-                        Location
+                        {TEXTS.COMPETITION_LOCATION}
                     </Typography>
                     <Stack flexDirection={'row'} gap={2}>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Country
+                                {TEXTS.COMPETITION_COUNTRY}
                             </Typography>
                             <TextField
                                 variant="outlined"
@@ -218,7 +223,7 @@ function CreateCompetitonPage() {
                         </Stack>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                City
+                                {TEXTS.COMPETITION_CITY}
                             </Typography>
                             <TextField
                                 variant="outlined"
@@ -232,7 +237,7 @@ function CreateCompetitonPage() {
 
                     <Stack>
                         <Typography variant="body2" fontFamily={'inherit'}>
-                            Venue
+                            {TEXTS.COMPETITION_VENUE}
                         </Typography>
                         <TextField
                             variant="outlined"
@@ -258,7 +263,7 @@ function CreateCompetitonPage() {
                             }}
                             onClick={() => navigate(-1)}
                         >
-                            Cancel
+                            {TEXTS.CANCEL}
                         </Button>
                         <Button
                             sx={{ bgcolor: 'var(--accent-color)' }}
@@ -266,7 +271,7 @@ function CreateCompetitonPage() {
                             color="primary"
                             type="submit"
                         >
-                            Save changes
+                            {TEXTS.SAVE_CHANGES}
                         </Button>
                     </Stack>
                 </Stack>

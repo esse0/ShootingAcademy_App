@@ -6,12 +6,15 @@ import { useForm } from 'react-hook-form';
 import { useApi } from '../../hooks/useApi';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { tagGroups } from '../../consts/TagGroups';
+import { tagGroups } from '../../constants/TagGroups';
 import { CreateCourseType } from '../../types/CourseTypes';
 import { useNavigate } from 'react-router';
+import { useSnackbar } from 'notistack';
+import { TEXTS } from '../../constants/texts';
 
 function CreateCoursePage() {
     const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
 
     const [course, setCourse] = useState<CreateCourseType>({
         id: '',
@@ -26,10 +29,10 @@ function CreateCoursePage() {
 
     const [moduleIdCount, setModuleIdCount] = useState(1);
 
-    const { execute: executeCourseData, statusCode: RecivedStatusCode } = useApi<null, CreateCourseType>(
+    const { execute: executeCreateCourse, statusCode: receivedStatusCode } = useApi<null, CreateCourseType>(
         async (body) => {
             return axios.post('/api/course/create', body);
-        },
+        }
     );
 
     const {
@@ -37,14 +40,14 @@ function CreateCoursePage() {
         handleSubmit,
         formState: { errors },
     } = useForm<CreateCourseType>({
-        mode: 'onBlur', // Проверять ошибки при потере фокуса
+        mode: 'onBlur',
     });
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setCourse((prev) => ({
             ...prev,
-            [name]: value, // Обновляем соответствующее поле в состоянии
+            [name]: value,
         }));
     };
 
@@ -52,33 +55,33 @@ function CreateCoursePage() {
         const { name, value } = e.target;
         setCourse((prev) => ({
             ...prev,
-            [name]: value, // Обновляем соответствующее поле в состоянии
+            [name]: value,
         }));
     };
 
     const IsNullParamsInModules = () => {
         let hasErrors = false;
 
-        course.modules.forEach((modul) => {
-            if (!modul.title || modul.title == '') {
-                alert('Вы не заполнили title в ModulId:' + modul.id + ' модуле');
+        course.modules.forEach((module) => {
+            if (!module.title || module.title == '') {
+                enqueueSnackbar(TEXTS.MODULE_TITLE_EMPTY + module.id, { variant: 'error' })
                 hasErrors = true;
             }
-            if (!modul.lessons || modul.lessons.length === 0) {
-                alert('Вы не добавили ни одного lesson в ModulId:' + modul.id + ' модуле');
+            if (!module.lessons || module.lessons.length === 0) {
+                enqueueSnackbar(TEXTS.LESSON_EMPTY + module.id, { variant: 'error' })
                 hasErrors = true;
             }
-            modul.lessons.forEach((lesson) => {
+            module.lessons.forEach((lesson) => {
                 if (!lesson.title || lesson.title == '') {
-                    alert('Вы не заполнили title в LessonId:' + lesson.id + ' уроке');
+                    enqueueSnackbar(TEXTS.LESSON_TITLE_EMPTY + lesson.id, { variant: 'error' })
                     hasErrors = true;
                 }
                 if (!lesson.description || lesson.description == '') {
-                    alert('Вы не заполнили description в LessonId:' + lesson.id + ' уроке');
+                    enqueueSnackbar(TEXTS.LESSON_DESCRIPTION_EMPTY + lesson.id, { variant: 'error' })
                     hasErrors = true;
                 }
-                if (!lesson.videoLink || lesson.videoLink == '') {
-                    alert('Вы не заполнили videoLink в LessonId:' + lesson.id + ' урока');
+                if (!lesson.videoId || lesson.videoId == '') {
+                    enqueueSnackbar(TEXTS.VIDEO_NOT_UPLOADED + lesson.id, { variant: 'error' })
                     hasErrors = true;
                 }
             });
@@ -89,7 +92,7 @@ function CreateCoursePage() {
 
     const onSubmit = async () => {
         if (IsNullParamsInModules()) return;
-        executeCourseData(course);
+        executeCreateCourse(course);
         console.log(course);
     };
 
@@ -113,28 +116,40 @@ function CreateCoursePage() {
     };
 
     useEffect(() => {
-        if (!RecivedStatusCode) return;
-        if (RecivedStatusCode === 201) {
+        if (!receivedStatusCode) return;
+        console.log('Received status code:', receivedStatusCode);
+        if (receivedStatusCode === 200 || receivedStatusCode === 201) {
+            enqueueSnackbar(TEXTS.COURSE_CREATED, { variant: 'success' });
             navigate('/app/moderatecourses');
+        } else {
+            enqueueSnackbar(TEXTS.COURSE_CREATE_ERROR, { variant: 'error' });
         }
-    }, [RecivedStatusCode]);
+    }, [receivedStatusCode, navigate, enqueueSnackbar]);
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <Stack gap={2}>
-                <Typography variant="h4" fontWeight={700} fontFamily={'inherit'}>
+                <Typography
+                    variant="h4"
+                    fontWeight={700}
+                    fontFamily={'inherit'}
+                >
                     Create new course
                 </Typography>
 
                 <Stack gap={2}>
                     <Divider></Divider>
-                    <Typography variant="h6" fontWeight={600} fontFamily={'inherit'}>
+                    <Typography
+                        variant="h6"
+                        fontWeight={600}
+                        fontFamily={'inherit'}
+                    >
                         Basic details
                     </Typography>
                     <Stack flexDirection={'row'} gap={2}>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Title
+                                {TEXTS.COURSE_TITLE}
                             </Typography>
                             <TextField
                                 variant="outlined"
@@ -148,7 +163,7 @@ function CreateCoursePage() {
                         </Stack>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Description
+                                {TEXTS.COURSE_DESCRIPTION}
                             </Typography>
                             <TextField
                                 variant="outlined"
@@ -165,7 +180,7 @@ function CreateCoursePage() {
                     <Stack flexDirection={'row'} gap={2}>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Duration
+                                {TEXTS.COURSE_DURATION}
                             </Typography>
 
                             <Select
@@ -188,7 +203,7 @@ function CreateCoursePage() {
 
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Level
+                                {TEXTS.COURSE_LEVEL}
                             </Typography>
                             <Select
                                 labelId="label"
@@ -212,7 +227,21 @@ function CreateCoursePage() {
                     <Stack flexDirection={'row'} gap={2}>
                         <Stack>
                             <Typography variant="body2" fontFamily={'inherit'}>
-                                Rate
+                                {TEXTS.COURSE_CATEGORY}
+                            </Typography>
+                            <TextField
+                                variant="outlined"
+                                placeholder=""
+                                size="small"
+                                {...register('category', { required: 'Category is required' })}
+                                onChange={onChange}
+                                sx={{ width: 400 }}
+                            />
+                            {errors.category && <Typography color="error">{errors.category.message}</Typography>}
+                        </Stack>
+                        <Stack>
+                            <Typography variant="body2" fontFamily={'inherit'}>
+                                {TEXTS.COURSE_RATE}
                             </Typography>
                             <TextField
                                 type="number"
@@ -228,20 +257,6 @@ function CreateCoursePage() {
                                 sx={{ width: 400 }}
                             />
                             {errors.rate && <Typography color="error">{errors.rate.message}</Typography>}
-                        </Stack>
-                        <Stack>
-                            <Typography variant="body2" fontFamily={'inherit'}>
-                                Category
-                            </Typography>
-                            <TextField
-                                variant="outlined"
-                                placeholder=""
-                                size="small"
-                                {...register('category', { required: 'Category is required' })}
-                                onChange={onChange}
-                                sx={{ width: 400 }}
-                            />
-                            {errors.category && <Typography color="error">{errors.category.message}</Typography>}
                         </Stack>
                     </Stack>
                 </Stack>
@@ -263,7 +278,7 @@ function CreateCoursePage() {
                     <Stack flexDirection={'row'} gap={4} flexWrap={'wrap'}>
                         {course.modules.map((item, index) => {
                             return (
-                                <Stack key={index} gap={2} sx={{ border: 1 }} padding={2} width={440}>
+                                <Stack key={index} gap={2} sx={{ border: 1 }} padding={2} width={500}>
                                     <Stack flexDirection={'row'} justifyContent={'flex-end'}>
                                         <Button
                                             onClick={() => {
@@ -301,7 +316,7 @@ function CreateCoursePage() {
                             }}
                             onClick={() => navigate(-1)}
                         >
-                            Cancel
+                            {TEXTS.CANCEL}
                         </Button>
                         <Button
                             sx={{ bgcolor: 'var(--accent-color)' }}
@@ -309,7 +324,7 @@ function CreateCoursePage() {
                             color="primary"
                             type="submit"
                         >
-                            Save changes
+                            {TEXTS.SAVE_CHANGES}
                         </Button>
                     </Stack>
                 </Stack>

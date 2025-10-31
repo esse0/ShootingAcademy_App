@@ -21,7 +21,7 @@ import React, { useEffect, useState } from 'react';
 import { CategoryButton } from '../../components/CategoryButton/CategoryButton';
 import axios from 'axios';
 import { useApi } from '../../hooks/useApi';
-import { tagGroups } from '../../consts/TagGroups';
+import { tagGroups } from '../../constants/TagGroups';
 
 function CoursesPage({
     sx,

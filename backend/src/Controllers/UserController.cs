@@ -1,151 +1,70 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ShootingAcademy.Models;
 using ShootingAcademy.Models.Controllers.User;
-using ShootingAcademy.Models.DB.ModelUser;
-using ShootingAcademy.Models.Exceptions;
 using ShootingAcademy.Services;
-using ShootingAcademy.Services.Media;
-
 
 namespace ShootingAcademy.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class UserController : ControllerBase
+    public class UserController : BaseController
     {
-        private readonly ApplicationDbContext dbContext;
-        private readonly IImageService _imageService;
+        private readonly IUserService _userService;
 
-        public UserController(ApplicationDbContext dbContext, IImageService imageService)
+        public UserController(IUserService userService)
         {
-            this.dbContext = dbContext;
-            this._imageService = imageService;
+            _userService = userService;
         }
 
-
         [HttpGet("auth"), Authorize]
-        public IResult Auth()
+        public IActionResult Auth()
         {
-            return Results.Ok();
+            return HandleResult();
         }
 
         [HttpPut, Authorize]
-        public async Task<IResult> Put([FromBody] UserProfileData profileData)
+        public async Task<IActionResult> Put([FromBody] UserProfileData profileData)
         {
-            try
-            {
-                Guid userGuid = AutorizeData.FromContext(HttpContext).UserGuid;
-
-                if (dbContext.Users.Where(usr => usr.Id != userGuid && usr.Email == profileData.Email).Any())
-                    throw new BaseException("Данная почта занята!");
-
-                User user = await dbContext.Users.FirstAsync(usr => usr.Id == userGuid);
-
-                user.FirstName = profileData.Name;
-                user.SecoundName = profileData.LastName;
-                user.Address = profileData.Address;
-                user.City = profileData.City;
-                user.Country = profileData.Country;
-                user.Grade = profileData.Grade;
-                user.Age = profileData.Age;
-                user.Email = profileData.Email;
-
-                dbContext.Users.Update(user);
-
-                await dbContext.SaveChangesAsync();
-
-                var profileImage = await _imageService.GetFileUrl(user.Id);
-
-                return Results.Json(UserWithAvatar.FromEntity(user, profileImage.FileUri));
-            }
-            catch (BaseException exp)
-            {
-                return Results.Json(exp.GetModel(), statusCode: exp.Code);
-            }
-            catch (Exception err)
-            {
-                return Results.Problem(err.Message, statusCode: 400);
-            }
+            var userId = AutorizeData.FromContext(HttpContext).UserGuid;
+            var user = await _userService.UpdateUserProfileAsync(userId, profileData);
+            return HandleResult(user);
         }
 
         [HttpDelete("deleteprofilephoto"), Authorize]
-        public async Task<IResult> DeleteProfilePhoto()
+        public async Task<IActionResult> DeleteProfilePhoto()
         {
-            try
-            {
-                Guid userGuid = AutorizeData.FromContext(HttpContext).UserGuid;
-                    
-                await _imageService.DeleteProfilePhoto(userGuid);
-               
-                return Results.Ok();
-            }
-            catch (BaseException exp)
-            {
-                return Results.Json(exp.GetModel(), statusCode: exp.Code);
-            }
-            catch (Exception err)
-            {
-                return Results.Problem(err.Message, statusCode: 400);
-            }
+            var userId = AutorizeData.FromContext(HttpContext).UserGuid;
+            await _userService.DeleteProfilePhotoAsync(userId);
+            return HandleResult();
         }
 
         [HttpGet("get"), Authorize(Roles = "admin")]
-        public async Task<IResult> GetUsersWithoutAdmin()
+        public async Task<IActionResult> GetUsersWithoutAdmin()
         {
-            try
-            {
-                var users = await dbContext.Users
-                    .Where(u => u.Role != "admin")
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                var result = users.Select(FullUserModel.FromEntity).ToList();
-
-                return Results.Json(result);
-            }
-            catch (BaseException apperr)
-            {
-                return Results.Json(apperr.GetModel(), statusCode: apperr.Code);
-            }
-            catch (Exception err)
-            {
-                return Results.Problem(err.Message, statusCode: 400);
-            }
+            var users = await _userService.GetUsersWithoutAdminAsync();
+            return HandleResult(users);
         }
 
         [HttpPost("changerole"), Authorize(Roles = "admin")]
-        public async Task<IResult> ChangeUserRole([FromQuery] string userId, [FromQuery] string newRole)
+        public async Task<IActionResult> ChangeUserRole([FromQuery] string userId, [FromQuery] string newRole)
         {
-            try
-            {
-                string[] allowedRoles = ["athlete", "moderator", "coach", "organisator"];
-
-                if (!allowedRoles.Any(role => role == newRole))
-                    throw new BaseException("Role not supported", 400);
-
-                var user = await dbContext.Users.FindAsync(Guid.Parse(userId)) 
-                                 ?? throw new BaseException("User not found", 404);
-
-                if (user.Role == "admin" && newRole != "admin")
-                    throw new BaseException("Cannot change administrator role", 400);
-
-                user.Role = newRole;
-
-                await dbContext.SaveChangesAsync();
-
-                return Results.Ok();
-            }
-            catch (BaseException apperr)
-            {
-                return Results.Json(apperr.GetModel(), statusCode: apperr.Code);
-            }
-            catch (Exception err)
-            {
-                return Results.Problem(err.Message, statusCode: 400);
-            }
+            await _userService.ChangeUserRoleAsync(userId, newRole);
+            return HandleResult();
         }
 
+        [HttpGet("organization"), Authorize(Roles = "organization, coach")]
+        public async Task<IActionResult> GetUserOrganization()
+        {
+            var userId = AutorizeData.FromContext(HttpContext).UserGuid;
+            var userRole = AutorizeData.FromContext(HttpContext).Role;
+            object organization = null;
+            if (userRole == "organization")
+            {
+                organization = await _userService.GetUserOrganizationAsync(userId);
+            }
+            else if (userRole == "coach")
+            {
+                organization = await _userService.GetCoachOrganizationAsync(userId);
+            }
+            return HandleResult(organization);
+        }
     }
 }

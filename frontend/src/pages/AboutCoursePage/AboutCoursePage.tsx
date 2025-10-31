@@ -23,6 +23,7 @@ import './AboutCoursePage.css';
 import { useApi } from '../../hooks/useApi';
 import axios from 'axios';
 import { CourseType } from '../../types/CourseTypes';
+import { TEXTS } from '../../constants/texts';
 
 function AboutCoursePage(props: { sx?: SxProps<Theme>; isApp: boolean }) {
     const params = useParams();
@@ -247,7 +248,7 @@ function AboutCoursePage(props: { sx?: SxProps<Theme>; isApp: boolean }) {
                                 variant="body1"
                                 fontWeight="500"
                             >
-                                instructor description
+                                {TEXTS.INSTRUCTOR_DESCRIPTION}
                             </Typography>
                         </Stack>
                     </Stack>

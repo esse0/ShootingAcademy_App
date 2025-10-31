@@ -29,6 +29,7 @@ export type CourseType = {
     category: string;
 };
 
+
 export type CreateCourseType = {
     id: string;
     title: string;
@@ -41,6 +42,7 @@ export type CreateCourseType = {
     features?: Array<FeaturesType>;
     faqs?: Array<faqsType>;
 };
+
 export default interface ModulesType {
 
     id: string;
@@ -52,5 +54,5 @@ export interface LessonType {
     id: string;
     title: string;
     description: string
-    videoLink?: string
+    videoId?: string;
 }

@@ -4,6 +4,16 @@ using ShootingAcademy.Models.DB.ModelUser;
 
 namespace ShootingAcademy.Models.DB
 {
+    public enum GroupMemberStatus
+    {
+        Pending,        // Запрос на вступление отправлен, ожидает одобрения
+        Approved,       // Принят в группу
+        Rejected,       // Запрос отклонён
+        Removed,        // Исключён из организации
+        Left,           // Самостоятельно покинул организацию
+        Banned          // Заблокирован
+    }
+
     public class GroupMember
     {
         [Key]
@@ -18,5 +28,7 @@ namespace ShootingAcademy.Models.DB
         public Guid AthleteGroupId { get; set; }
         [ForeignKey(nameof(AthleteGroupId))]
         public AthleteGroup AthleteGroup { get; set; }
+
+        public GroupMemberStatus Status { get; set; }
     }
 }

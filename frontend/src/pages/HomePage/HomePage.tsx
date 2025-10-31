@@ -51,10 +51,10 @@ function HomePage() {
             </p>
           </div>
           <Stack gap={'60px'}> {/* Сделать подгрузку существующих курсов */}
-            <Course courseLink='/course' course={{id: '1', icon: undefined, level: 'Beginner', title: 'Pistol Base', rate: 4.2, duration: '2 months', description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas.', category: 'Pistol'}}></Course>
-            <Course courseLink='/course' course={{id: '2', icon: undefined, level: 'Beginner', title: 'Indoor Shooting', rate: 4.2, duration: '2 months', description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas.', category: 'Pistol'}}></Course>
-            <Course courseLink='/course' course={{id: '3', icon: undefined, level: 'Beginner', title: 'Indoor Shooting', rate: 4.2, duration: '2 months', description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas.', category: 'Pistol'}}></Course>
-            <Course courseLink='/course' course={{id: '4', icon: undefined, level: 'Beginner', title: 'Indoor Shooting', rate: 4.2, duration: '2 months', description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas.', category: 'Pistol'}}></Course>
+            <Course courseLink='#' course={{id: '1', icon: undefined, level: 'Beginner', title: 'Pistol Base', rate: 4.2, duration: '2 months', description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas.', category: 'Pistol'}}></Course>
+            <Course courseLink='#' course={{id: '2', icon: undefined, level: 'Beginner', title: 'Indoor Shooting', rate: 4.2, duration: '2 months', description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas.', category: 'Pistol'}}></Course>
+            <Course courseLink='#' course={{id: '3', icon: undefined, level: 'Beginner', title: 'Indoor Shooting', rate: 4.2, duration: '2 months', description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas.', category: 'Pistol'}}></Course>
+            <Course courseLink='#' course={{id: '4', icon: undefined, level: 'Beginner', title: 'Indoor Shooting', rate: 4.2, duration: '2 months', description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quas.', category: 'Pistol'}}></Course>
           </Stack>
         </section>
         <section className="advantages_section">

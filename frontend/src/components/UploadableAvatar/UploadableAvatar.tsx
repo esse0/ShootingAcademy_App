@@ -1,13 +1,15 @@
 import { Avatar, Box, IconButton } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import React, { useRef, useState } from "react";
-import { ALLOWED_TYPES } from "../../consts/ImageAllowedTypes";
+import { ALLOWED_TYPES } from "../../constants/ImageAllowedTypes";
 import { UploadableAvatarProps } from "../../types/UploadableAvatarProps";
 import { ClearIcon } from "@mui/x-date-pickers";
+import { useSnackbar } from "notistack";
 
 export default function UploadableAvatar({ sx, src, onChange, onDelete }: UploadableAvatarProps) {
   const [avatarSrc, setAvatarSrc] = useState<string>(src);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   const handleClick = () => {
     inputRef.current?.click();
@@ -18,7 +20,7 @@ export default function UploadableAvatar({ sx, src, onChange, onDelete }: Upload
     if (!file) return;
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      alert("Пожалуйста, выберите изображение в формате JPG, PNG или WEBP.");
+      enqueueSnackbar("Пожалуйста, выберите изображение в формате JPG, PNG или WEBP.", { variant: 'error' })
       return;
     }
 

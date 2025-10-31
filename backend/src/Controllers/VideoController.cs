@@ -6,9 +6,8 @@ using ShootingAcademy.Services.Media;
 
 namespace ShootingAcademy.Controllers
 {
-    [ApiController]
     [Route("api/video")]
-    public class VideoController : ControllerBase
+    public class VideoController : BaseController
     {
         private readonly IVideoService _videoService;
 
@@ -17,20 +16,21 @@ namespace ShootingAcademy.Controllers
             _videoService = videoService;
         }
 
-        [HttpPost("upload"), Authorize(Roles = "moderator")]
+        [HttpPost("upload"), Authorize(Roles = "organization")]
         public async Task<IActionResult> GenerateUploadUrl([FromBody] FileUploadRequest request)
         {
             var userId = AutorizeData.FromContext(HttpContext).UserGuid;
             var result = await _videoService.GeneratePresignedUploadAsync(request, userId);
-            return Ok(result);
+            return HandleResult(result);
         }
 
-        [HttpPost("confirm"), Authorize(Roles = "moderator")]
-        public async Task<IActionResult> ConfirmUpload([FromBody] FileConfirmRequest request)
+        [HttpPost("confirm"), Authorize(Roles = "organization")]
+        public async Task<IActionResult> ConfirmUpload([FromQuery] FileConfirmRequest request)
         {
             var userId = AutorizeData.FromContext(HttpContext).UserGuid;
             var media = await _videoService.ConfirmUploadAsync(request, userId);
-            return Ok(media);
+
+            return HandleResult(media.Id.ToString());
         }
     }
 }

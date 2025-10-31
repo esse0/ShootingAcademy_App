@@ -1,10 +1,7 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import { Notification } from "../types/NotificationType";
 
-export const testAtom = atom(true); 
-                              //  {Value}            или useAtomValue(testAtom)
-                              //  {setValue}         или useSetValue(testAtom)
-// в компоненте пишешь const [testValue, setTestValue] = useAtom(testAtom) // это простое состояние (обнуляется при перезагрузке)
 export const userAtom = atomWithStorage("userFields", 
     {
         id: "",
@@ -20,3 +17,33 @@ export const userAtom = atomWithStorage("userFields",
         role: "guest",
         profilePhotoUri: ""
     });
+
+export const notificationsAtom = atom<Notification[]>([]);
+
+export const unreadNotificationsAtom = atom((get) =>
+  get(notificationsAtom).filter((n) => !n.isRead)
+);
+
+// Количество непрочитанных (для бейджа)
+export const unreadCountAtom = atom((get) =>
+  get(unreadNotificationsAtom).length
+);
+
+// Добавить новое уведомление
+export const addNotificationAtom = atom(null, (get, set, notification: Notification) => {
+  const current = get(notificationsAtom);
+  set(notificationsAtom, [notification, ...current]);
+});
+
+// Отметить уведомление как прочитанное
+export const markAsReadAtom = atom(null, (get, set, id: string) => {
+  const updated = get(notificationsAtom).map((n) =>
+    n.id === id ? { ...n, isRead: true } : n
+  );
+  set(notificationsAtom, updated);
+});
+
+// Очистить все уведомления
+export const clearNotificationsAtom = atom(null, (_get, set) => {
+  set(notificationsAtom, []);
+});

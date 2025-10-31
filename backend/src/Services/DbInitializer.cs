@@ -17,7 +17,7 @@ namespace ShootingAcademy.Services
             string adminEmail = Environment.GetEnvironmentVariable("ADMIN_EMAIL") ?? "admin@gmail.com";
             string adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "123password";
 
-            if (!context.Users.Any(u => u.Role == "Admin"))
+            if (!context.Users.Any(u => u.Email.ToLower() == adminEmail.ToLower()))
             {
                 var admin = new User
                 {

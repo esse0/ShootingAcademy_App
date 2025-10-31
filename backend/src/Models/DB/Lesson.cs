@@ -18,6 +18,7 @@ namespace ShootingAcademy.Models.DB
 
         public int? Oder { get; set; }
 
+        [InverseProperty("Lesson")]
         public LessonVideo? LessonVideo { get; set; }
     }
 }

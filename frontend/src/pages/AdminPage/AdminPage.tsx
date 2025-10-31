@@ -15,8 +15,11 @@ import { useApi } from '../../hooks/useApi';
 import axios from 'axios';
 import { ChangeRoleType } from '../../types/ChangeRoleType';
 import AccountCircleTwoToneIcon from '@mui/icons-material/AccountCircleTwoTone';
+import { useSnackbar } from 'notistack';
+import { TEXTS } from '../../constants/texts';
 
 export function AdminPage() {
+    const { enqueueSnackbar } = useSnackbar();
     const [open, setOpen] = useState(false);
     const [selectedId, setSelectedId] = React.useState<GridRowId>('');
 
@@ -24,7 +27,7 @@ export function AdminPage() {
         return axios.get('/api/User/get');
     });
 
-    const { statusCode: statusCodeChangeRole, execute: executeChangeRole } = useApi<null, ChangeRoleType>(
+    const { execute: executeChangeRole } = useApi<null, ChangeRoleType>(
         async (body) => {
             return axios.post('/api/User/changerole', null, { params: body });
         },
@@ -35,9 +38,19 @@ export function AdminPage() {
         setOpen(true);
     };
 
-    const handleChangeRole = (newRole: string) => {
-        executeChangeRole({ userId: selectedId.toString(), newRole });
-        handleCloseDialog();
+    const handleChangeRole = async (newRole: string) => {
+        try {
+            const response = await executeChangeRole({ userId: selectedId.toString(), newRole });
+            if (response?.status === 200) {
+                enqueueSnackbar(TEXTS.ROLE_UPDATED, {variant:"success"});
+                await execute();
+            }
+        } catch (error) {
+            console.error('Ошибка при изменении роли:', error);
+            enqueueSnackbar('Ошибка при изменении роли', {variant:"error"});
+        } finally {
+            handleCloseDialog();
+        }
     };
 
     const handleCloseDialog = () => {
@@ -46,19 +59,9 @@ export function AdminPage() {
     };
 
     useEffect(() => {
-        if (statusCodeChangeRole == 200) {
-            alert('Роль обновленна');
-            window.location.reload();
-        }
-    }, [statusCodeChangeRole]);
-
-    useEffect(() => {
         execute();
     }, []);
 
-    useEffect(() => {
-        console.log(resData);
-    }, [resData]);
 
     const columns: GridColDef[] = [
         { disableColumnMenu: true, field: 'id', headerName: 'ID', width: 70 },
@@ -128,7 +131,12 @@ export function AdminPage() {
             </Typography>
 
             <DataGrid rows={resData || []} columns={columns} hideFooter sx={{ border: 0 }} />
-            <Dialog open={open} onClose={handleCloseDialog}>
+            <Dialog 
+                open={open} 
+                onClose={handleCloseDialog}
+                keepMounted={false}
+                disableEnforceFocus
+            >
                 <DialogTitle fontFamily={'var(--primary-font)'}>Change user role?</DialogTitle>
                 <DialogContent>
                     <DialogContentText fontFamily={'var(--primary-font)'}>
@@ -157,20 +165,11 @@ export function AdminPage() {
                     <Button
                         variant="outlined"
                         onClick={() => {
-                            handleChangeRole('moderator');
+                            handleChangeRole('organization');
                         }}
                         sx={{ borderColor: '#455CC7', color: '#455CC7' }}
                     >
-                        Set moderator
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        onClick={() => {
-                            handleChangeRole('organisator');
-                        }}
-                        sx={{ borderColor: '#455CC7', color: '#455CC7' }}
-                    >
-                        Set organisator
+                        Set organization
                     </Button>
                     <Button
                         sx={{ borderColor: '#455CC7', color: 'white' }}

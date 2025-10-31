@@ -7,6 +7,7 @@ import GroupBanner from '../../components/GroupBanner/GroupBanner';
 import { FullUserModel } from '../../types/UserProfileData';
 import { useApi } from '../../hooks/useApi';
 import axios from 'axios';
+import { useWebSocketContext } from '../../hooks/WebSocketContext';
 
 function GroupsPage() {
     const userData: FullUserModel = useAtomValue(userAtom);
@@ -23,11 +24,14 @@ function GroupsPage() {
         return axios.get('/api/Group/coach');
     });
 
-    const {execute: executeCreateGroup, statusCode: RecivedCreateCode, setStatusCode} = useApi<null, GroupType>(
-        async (body)=>{
+    const { execute: executeCreateGroup, statusCode: RecivedCreateCode, setStatusCode } = useApi<null, GroupType>(
+        async (body) => {
             return axios.post('/api/Group/create', body);
         }
     );
+
+    const ws = useWebSocketContext();
+    const setOnGroups = ws?.setOnGroups;
 
     const getData = () => {
         if (userData.role === 'coach') executeCoachGetGroups();
@@ -39,16 +43,24 @@ function GroupsPage() {
         if (RecivedCoachGroups) setGroups(RecivedCoachGroups);
     }, [RecivedGroups, RecivedCoachGroups]);
 
-    useEffect(()=>{
-        if(userData.id) getData();
+    useEffect(() => {
+        if (userData.id) getData();
     }, [userData])
 
-    useEffect(()=>{
-        if(RecivedCreateCode === 201) {
+    useEffect(() => {
+        if (RecivedCreateCode === 200) {
             getData();
             setStatusCode(null);
         }
     }, [RecivedCreateCode])
+
+    useEffect(() => {
+        if (setOnGroups) {
+            setOnGroups(() => {
+                getData();
+            });
+        }
+    }, [getData, setOnGroups]);
 
     const handleAddOpen = () => setOpen(true);
 
@@ -66,14 +78,14 @@ function GroupsPage() {
     };
 
     return (
-       <Stack gap={"20px"}>
+        <Stack gap={"20px"}>
             <Stack flexDirection={"row"}>
-                <Typography variant="h4" fontFamily={"inherit"} fontWeight={"bold"}>Groups</Typography> 
-            
+                <Typography variant="h4" fontFamily={"inherit"} fontWeight={"bold"}>Groups</Typography>
+
                 {
                     userData.role === "coach" &&
                     <>
-                        <Button sx={{ml: "auto", width:"200px", bgcolor: "var(--accent-color)"}} variant="contained" color="primary" onClick={handleAddOpen}>
+                        <Button sx={{ ml: "auto", width: "200px", bgcolor: "var(--accent-color)" }} variant="contained" color="primary" onClick={handleAddOpen}>
                             Create group
                         </Button>
 
@@ -82,7 +94,7 @@ function GroupsPage() {
                             <DialogContent>
                                 <Stack spacing={2} sx={{ mt: 1 }}>
                                     <TextField
-                                        label="Organisation Name"
+                                        label="Group Name"
                                         variant="outlined"
                                         fullWidth
                                         value={groupName}
@@ -91,24 +103,24 @@ function GroupsPage() {
                                 </Stack>
                             </DialogContent>
                             <DialogActions>
-                                <Button sx={{borderColor: "var(--accent-color)", color: "var(--accent-color)"}} onClick={handleAddClose} color="primary">Cancel</Button>
-                                <Button sx={{borderColor: "var(--accent-color)", color: "var(--accent-color)"}} onClick={handleAddSubmit} color="primary" disabled={!groupName}>Create</Button>
+                                <Button sx={{ borderColor: "var(--accent-color)", color: "var(--accent-color)" }} onClick={handleAddClose} color="primary">Cancel</Button>
+                                <Button sx={{ borderColor: "var(--accent-color)", color: "var(--accent-color)" }} onClick={handleAddSubmit} color="primary" disabled={!groupName}>Create</Button>
                             </DialogActions>
                         </Dialog>
                     </>
                 }
             </Stack>
             {
-                groups.length === 0  && <Typography textAlign={"center"} variant="h5" fontFamily={"inherit"} fontWeight={"bold"} color="text.secondary">There are no groups</Typography>
+                groups.length === 0 && <Typography textAlign={"center"} variant="h5" fontFamily={"inherit"} fontWeight={"bold"} color="text.secondary">There are no groups</Typography>
             }
             {
                 groups.map((group: GroupType, index) => {
                     return (
-                        <GroupBanner key={index} group={group} listUpdate={getData}/>
+                        <GroupBanner key={index} group={group} listUpdate={getData} />
                     );
                 })
             }
-       </Stack>
+        </Stack>
     );
 }
 

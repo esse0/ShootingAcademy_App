@@ -38,7 +38,7 @@ function CourseModule(props: Props) {
                             ...modul,
                             lessons: [
                                 ...modul.lessons,
-                                { id: String(lessonId), title: '', description: '', videoLink: '' },
+                                { id: String(lessonId), title: '', description: '', videoId: '' },
                             ],
                         };
                     } 

@@ -41,10 +41,7 @@ namespace ShootingAcademy.Controllers
 
                 var completedCoursesCount = user.Courses.Count(x => x.IsClosed == true);
                 var completedLessonsCount = user.Courses
-                    .Where(el => el.IsClosed)
-                    .SelectMany(course => course.Course.Modules)
-                    .SelectMany(module => module.Lessons)
-                    .Count();
+                    .Sum(course => course.CompletedLessons.Count);
 
                 var completedCompetitionsCount = user.Competitions.Where(competition => competition.Competition.Status == ActiveStatus.Ended).Count();
 
